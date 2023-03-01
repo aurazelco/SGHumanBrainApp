@@ -25,16 +25,16 @@ DsUI <- function(id, label = "ds_info"){
       h4("Samples information"),
       p("Below the number of samples and cells in each dataset is plotted, as well as the numebr of cells per cell type. "),
       column(6,
-             h5("Number of samples in the sub-datasets, divided by sex"),
+             strong("Number of samples in the sub-datasets, divided by sex"),
              img(src = "num_samples.png", height="400px", width="100%")),
       column(6,
-             h5("Number of cells in the sub-datasets, divided by sex"),
+             strong("Number of cells in the sub-datasets, divided by sex"),
              img(src = "num_cells.png", height="400px", width="70%"))
     ),
     fluidRow(
       br(),
       br(),
-      h5("Number of cells in the sub-datasets, divided by sex and cell type"),
+      strong("Number of cells in the sub-datasets, divided by sex and cell type"),
       img(src = "num_cells_per_ct.png", height="50%", width="50%", style="display: block; margin-left: auto; margin-right: auto;"),
       p("The dashed line corresponds to 100 cells, which was used as a threshold for determinng which cell types to analyze. ")
     )

@@ -41,7 +41,7 @@ ImportCts <- function(main_dir, ext, row_col) {
 
 # 3. Imports DISCO and UCSC datasets; slight different folder structure requires different inputs
   # Input: main directory, file extension, where to find row names
-  # Return: unfiltered DEGs as nexted list
+  # Return: unfiltered DEGs as nested list
 
 ImportDatasets <- function(main_dir, ext="csv", row_col=1) {
   ds_list <- list()
@@ -56,32 +56,3 @@ ImportDatasets <- function(main_dir, ext="csv", row_col=1) {
   return(ds_list)
 }
 
-# 4. Imports DISCO and UCSC datasets; slight different folder structure requires different inputs
-  # Input: unfiltered DEGs as nexted list, the common annotation to compare cell types
-  # Return: unfiltered DEGs as nexted list with new annotation
-
-UnifyAnnotation <- function(ds_list, common_annotation) {
-  ds_common_annot <- list()
-  for (group in names(ds_list)) {
-    group_ls <- list()
-    for (sex in names(ds_list[[group]])) {
-      sex_ls <- list()
-      new_names <- vector()
-      for (ct in unique(common_annotation)) {
-        common_ct <- names(common_annotation[which(common_annotation==ct)])
-        if(any(common_ct %in% tolower(names(ds_list[[group]][[sex]])))) {
-          ct_ls <- ds_list[[group]][[sex]][names(ds_list[[group]][[sex]])[which(tolower(names(ds_list[[group]][[sex]])) %in% common_ct)]]
-          ct_ls <- do.call(rbind, ct_ls)
-          sex_ls <- append(sex_ls, list(ct_ls))
-          new_names <- c(new_names, ct)
-        }
-      }
-      names(sex_ls) <- new_names
-      group_ls <- append(group_ls, list(sex_ls))
-    }
-    names(group_ls) <- names(ds_list[[group]])
-    ds_common_annot <- append(ds_common_annot, list(group_ls))
-  }
-  names(ds_common_annot) <- names(ds_list)
-  return(ds_common_annot)
-}
