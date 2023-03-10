@@ -1,7 +1,7 @@
 
 # 0. Import Libraries
 
-#library(stringr) # to modify and harmonize names
+library(stringr) # to modify and harmonize names
 library(ggplot2) # to plot
 library(tidyr) # to clean and re-organize dfs
 #library(ggpubr) # to assemble plots together before saving
@@ -9,33 +9,52 @@ library(tidyr) # to clean and re-organize dfs
 #library(scales) # to set the palette to be used in the PlotDEGsOverlap function
 library(RColorBrewer) # to set a palette for the number of DEGs palette
 
-# 1. Function to filter out ns genes and too low FC, and order based on FC 
-  # Input: dataframe of DEGs
-  # Return: gene list of significant genes as data.frame
+# 1. Import All DEGs from F and M for all ct; slight different folder structure requires different inputs
+# Input: directory where to find ct sub-folders, file extension, where to find row names
+# Return: list of 2 lists, one for F and one for M dfs
 
-Filter_gene <- function( order.gene.df, pval, FC) {
-  logFC <- log2(FC)
-  gene.sig <- order.gene.df[  order.gene.df[["p_val_adj"]] <= pval
-                              & order.gene.df[["avg_log2FC"]] >= logFC, ]
-  return(data.frame("Genes"=rownames(gene.sig)))
-}
-
-# 2. Function to filter the non-signifcant DEGs in all datasets
-  # Input: list of DEGs, pvalue and FC thresholds
-  # Return: list of significant DEGs 
-
-FilterDs <- function(list_ds, pval, FC) {
-  filt_ds <- list()
-  for (group_id in names(list_ds)) {
-    sex_ls <- list("F" = lapply(1:length(names(list_ds[[group_id]][["F"]])), function(x) Filter_gene(list_ds[[group_id]][["F"]][[x]], pval, FC)),
-                   "M" = lapply(1:length(names(list_ds[[group_id]][["M"]])), function(x) Filter_gene(list_ds[[group_id]][["M"]][[x]], pval, FC)))
-    names(sex_ls[["F"]]) <- names(list_ds[[group_id]][["F"]])
-    names(sex_ls[["M"]]) <- names(list_ds[[group_id]][["M"]])
-    filt_ds <- append(filt_ds, list(sex_ls))
+ImportFiltDEGs <- function(main_dir, ext, row_col) {
+  sub_ct <- list.dirs(main_dir, recursive=F, full.names = F)
+  df_F <- list()
+  df_M <- list()
+  names_F <- vector()
+  names_M <- vector()
+  for (ct in 1:length(sub_ct)) {
+    deg <- ImportDEGs(paste(main_dir, sub_ct[ct], sep="/"), ext, row_col)
+    #names(deg) <- str_remove_all(names(deg), "_filt")
+    for (i in names(deg)) {
+      if (grepl("F", i, fixed=TRUE)){
+        df_F <- append(df_F, list(deg[[i]]))
+        names_F <- c(names_F, sub_ct[ct])
+      } else {
+        df_M <- append(df_M, list(deg[[i]]))
+        names_M <- c(names_M, sub_ct[ct])
+      }
+    }
   }
-  names(filt_ds) <- names(list_ds)
-  return(filt_ds)
+  names(df_F) <- names_F
+  names(df_M) <- names_M
+  return(list("F"=df_F, "M"=df_M))
 }
+
+# 2. Imports DISCO and UCSC datasets; slight different folder structure requires different inputs
+# Input: main directory, file extension, where to find row names
+# Return: unfiltered DEGs as nested list
+
+ImportFiltDatasets <- function(main_dir, pval_thresh, FC_thresh, ext="csv", row_col=1) {
+  ds_list <- list()
+  group_names <- vector()
+  filt_folder <- paste0(main_dir, "pval_", str_replace(pval_thresh, "\\.",  ","), "_FC_", str_replace(FC_thresh, "\\.",  ","), "/")
+  folder_list <- list.dirs(filt_folder, recursive = F, full.names = F)
+  for (folder in folder_list) {
+    ds_list <- append(ds_list, list(ImportFiltDEGs(paste0(filt_folder, folder), ext, row_col)))
+    group_names <- c(group_names, folder)
+  }
+  names(ds_list) <- group_names
+  ds_list[lengths(ds_list) != 0]
+  return(ds_list)
+}
+
 
 # 3. Creates the df for the input ct so that we know if a DEG is found in a certain group or not -> used to generate hmps
   # Input: list of ct dfs, which sex and ct to analyze

@@ -18,26 +18,31 @@ ImportDEGs <- function(path, ext, row_col) {
 ImportCts <- function(main_dir, ext, row_col) {
   path <- paste0(main_dir, "/Unfiltered_DEGs/")
   sub_ct <- list.dirs(path, recursive=F, full.names = F)
-  df_F <- list()
-  df_M <- list()
-  names_F <- vector()
-  names_M <- vector()
+  #df_F <- list()
+  #df_M <- list()
+  #names_F <- vector()
+  #names_M <- vector()
+  ds_degs <- list()
   for (ct in 1:length(sub_ct)) {
     deg <- ImportDEGs(paste(path, sub_ct[ct], sep="/"), ext, row_col)
-    for (i in names(deg)) {
-      if (grepl("F", i, fixed=TRUE)){
-        df_F <- append(df_F, list(deg[[i]]))
-        names_F <- c(names_F, sub_ct[ct])
-      } else {
-        df_M <- append(df_M, list(deg[[i]]))
-        names_M <- c(names_M, sub_ct[ct])
-      }
-    }
-  }
-  names(df_F) <- names_F
-  names(df_M) <- names_M
-  return(list("F"=df_F, "M"=df_M))
+    ds_degs <- append(ds_degs, list(deg))}
+    #for (i in names(deg)) {
+    #  if (grepl("F", i, fixed=TRUE)){
+    #    df_F <- append(df_F, list(deg[[i]]))
+    #    names_F <- c(names_F, sub_ct[ct])
+    #  } else {
+    #    df_M <- append(df_M, list(deg[[i]]))
+    #    names_M <- c(names_M, sub_ct[ct])
+    #  }
+    #}
+  #}
+  #names(df_F) <- names_F
+  #names(df_M) <- names_M
+  #return(list("F"=df_F, "M"=df_M))
+  names(ds_degs) <- sub_ct
+  return(ds_degs)
 }
+
 
 # 3. Imports DISCO and UCSC datasets; slight different folder structure requires different inputs
   # Input: main directory, file extension, where to find row names

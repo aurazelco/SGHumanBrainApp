@@ -1,5 +1,6 @@
 library(shiny)
 library(shinydashboard)
+library(zip)
 
 source("custom_scripts/DEGs_func.R")
 
@@ -59,7 +60,7 @@ groups_order <- c("Velmeshev_2nd_trimester",
                   "PRJNA544731_Multiple Sclerosis" 
 )
 
-all_degs <- ImportDatasets("data/DEGs/")
+#all_degs <- ImportDatasets("data/Unfiltered_DEGs/")
 
 brewer_palette <- c(colorRampPalette(c("white", "#228B22"))(8), "#FF0000")
 custom_palette <- c(
@@ -84,28 +85,37 @@ DEGsUI <- function(id, label = "degs"){
     # First Section
     fluidRow(
       br(),
-      p("Please select the threshold for the p-value and fold change (FC). The FC threshold will be then transformed to log10 values."),
+      p("Please select the threshold for the p-value and fold change (FC). The FC threshold will be then transformed to log2 values."),
       p("Only the DEGs which have both the p-value and the FC less than the respective thresholds will be considered in the analyses below."),
       br(),
-      p("Please wait few moments for all graphs to be generated."),
-      br(),
-      column(6, 
-             numericInput(NS(id,"pval"), 
-                          p("P-value threshold"), 
-                          value = 0.05)),
-      column(6, 
-             numericInput(NS(id,"FC"), 
+      column(4, 
+             selectInput(NS(id,"pval"), 
+                          p("Adjusted P-value threshold"), 
+                          choices = list("NS"=1, "0.05"=0.05, "0.01"=0.01, "0.001"=0.001), 
+                          selected = 0.05)),
+      column(4, 
+             selectInput(NS(id,"FC"), 
                           p("FC threshold"), 
-                          value = 1.2))
+                         choices = list("NS"=1, "1.2"=1.2, "1.5"=1.5, "2"=2), 
+                         selected = 1.2)),
+      column(4, 
+             p("Thresholds Help"),
+             helpText("Note: in the options on the left, NS stands for non-significant;",
+                      "therefore, the DEGs will not be filtered for either adjusted p-value",
+                      "or fold change"))
     ),
-    fluidRow(column(6, textOutput(NS(id,"selected_pval"))),
-             column(6, textOutput(NS(id,"selected_FC")))
+    fluidRow(column(4, textOutput(NS(id,"selected_pval"))),
+             column(4, textOutput(NS(id,"selected_FC")))
     ),
+    br(),
+    p("download CSV files of filtered DEGs?", style = "color:red"),
+    br(),
+    p("Please wait few moments for all graphs to be generated."),
     br(),
     br(),
     box( height = 1300, width = 900,
-        title='The number of sex-biased genes',
-        plotOutput(NS(id,"num_degs_plot"))
+        title='The number of sex-biased DEGs',
+        imageOutput(NS(id,"num_degs_plot"))
     ),
     br(),
     fluidRow(column(3, downloadButton(NS(id,'save_num_degs_plot'), 'Download plot as PNG'))
@@ -118,42 +128,30 @@ DEGsServer <- function(id) {
   moduleServer(id, function(input, output, session) {
   
     output$selected_pval <- renderText({ 
-      paste0("You have selected this p-value threshold: ", input$pval)
+      paste0("You have selected this adjusted p-value threshold: ", input$pval)
     })
     
     output$selected_FC <- renderText({ 
       paste0("You have selected this FC threshold: ", input$FC)
     })
     
+    
     filt_DEGs <- reactive({
-      FilterDs(all_degs, input$pval, input$FC)
+      filt_files_path <-paste0("data/Filtered_DEGs/pval_", 
+                                      str_replace(input$pval, "\\.",  ","), 
+                                      "_FC_", 
+                                      str_replace(input$FC, "\\.",  ","), "/")
+      filt_DEGs <- list.files(filt_files_path, "*.csv", recursive = T)
+      return(filt_DEGs)
     })
     
-    presence_df <- reactive({
-      CreateSexDf(filt_DEGs(), unified_annotation)
-    })
     
-    num_degs <- reactive({
-      NumDEGsAcrossGroups(presence_df(), groups_order)
-    })
-    
-    num_degs_plot <- reactive({
-      PlotNumDEGsFaceted(num_degs_final(), custom_palette)
-    })
-    
-    num_degs_plot <- reactive({
-      if (input$pval!= 0.05 | input$pval!= 1.2 )  {
-        filt_DEGs_filt <- FilterDs(all_degs, input$pval, input$FC) 
-        presence_df_filt <- CreateSexDf(filt_DEGs_filt, unified_annotation)
-        num_degs_filt <- NumDEGsAcrossGroups(presence_df_filt, groups_order)
-        num_degs_plot_filt <- PlotNumDEGsFaceted(num_degs_filt, custom_palette)
-      } 
-      return(num_degs_plot_filt)
-    })
-    
-    output$num_degs_plot <- renderPlot({
-      num_degs_plot()
-    }, height = 1200, width = 1000)
+    output$num_degs_plot <- renderImage({
+      filename <- normalizePath(file.path(paste0("data/Plots/pval_", 
+                                str_replace(input$pval, "\\.",  ","), "_FC_", str_replace(input$FC, "\\.",  ","), 
+                                "/Number_of_DEGs.png")))
+      list(src = filename, height = 1200, width = 750)
+    }, deleteFile = FALSE)
     
     output$save_num_degs_plot <- downloadHandler(
       filename = "Number_of_DEGs.png",
