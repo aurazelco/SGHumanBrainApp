@@ -1,8 +1,5 @@
 library(shiny)
 library(shinydashboard)
-library(zip)
-
-source("custom_scripts/DEGs_func.R")
 
 # 2. Imports the unfiltered DEGs and generates another list, plus defines common annotation and group order to be followed in plots
 
@@ -119,6 +116,14 @@ DEGsUI <- function(id, label = "degs"){
     ),
     br(),
     fluidRow(column(3, downloadButton(NS(id,'save_num_degs_plot'), 'Download plot as PNG'))
+    ),
+    br(),
+    box( height = 1300, width = 900,
+         title='Shared DEGs among datasets, colored by chromosome annotation',
+         imageOutput(NS(id,"chr_fraction"))
+    ),
+    br(),
+    fluidRow(column(3, downloadButton(NS(id,'save_chr_fraction_plot'), 'Download plot as PNG'))
     )
   )
 }
@@ -147,20 +152,38 @@ DEGsServer <- function(id) {
     
     
     output$num_degs_plot <- renderImage({
-      filename <- normalizePath(file.path(paste0("data/Plots/pval_", 
+      filename <- normalizePath(file.path(paste0("www/Plots/pval_", 
                                 str_replace(input$pval, "\\.",  ","), "_FC_", str_replace(input$FC, "\\.",  ","), 
                                 "/Number_of_DEGs.png")))
       list(src = filename, height = 1200, width = 750)
     }, deleteFile = FALSE)
     
+    
     output$save_num_degs_plot <- downloadHandler(
-      filename = "Number_of_DEGs.png",
+      filename = paste0("Number_of_DEGs_pval_", str_replace(input$pval, "\\.",  ","), "_FC_", str_replace(input$FC, "\\.",  ","), ".png"),
       content = function(file) {
-        png(file, res = 300, units = 'in', height = 22, width = 15)
-        plot(num_degs_plot())
-        dev.off()
+        file.copy(normalizePath(file.path(paste0("www/Plots/pval_", 
+                                                 str_replace(input$pval, "\\.",  ","), "_FC_", str_replace(input$FC, "\\.",  ","), 
+                                                 "/Number_of_DEGs.png"))), file)
       }
     )
+    
+    output$chr_fraction <- renderImage({
+      filename <- normalizePath(file.path(paste0("www/Plots/pval_", 
+                                                 str_replace(input$pval, "\\.",  ","), "_FC_", str_replace(input$FC, "\\.",  ","), 
+                                                 "/Chr_fractions.png")))
+      list(src = filename, height = 1200, width = 750)
+    }, deleteFile = FALSE)
+    
+    output$save_chr_fraction_plot <- downloadHandler(
+      filename = paste0("Chr_fraction_pval_", str_replace(input$pval, "\\.",  ","), "_FC_", str_replace(input$FC, "\\.",  ","), ".png"),
+      contentType = "image/png",
+      content = function(file) {
+        file.copy(normalizePath(file.path(paste0("www/Plots/pval_", 
+                                                 str_replace(input$pval, "\\.",  ","), "_FC_", str_replace(input$FC, "\\.",  ","), 
+                                                 "/Chr_fractions.png"))), file)
+      }
+    )  
     
   })
   

@@ -17,7 +17,6 @@
 
 library(shiny)
 library(shinydashboard)
-source("custom_scripts/ImportDEGs.R")
 source("custom_scripts/About.R")
 source("custom_scripts/Source.R")
 source("custom_scripts/DsInfo.R")

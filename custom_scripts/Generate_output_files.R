@@ -62,7 +62,7 @@ groups_order <- c("Velmeshev_2nd_trimester",
                   "PRJNA544731_Multiple Sclerosis" 
 )
 
-#all_degs <- ImportDatasets(paste0(wd, "data/Unfiltered_DEGs/"))
+all_degs <- ImportDatasets(paste0(wd, "data/Unfiltered_DEGs/"))
 
 brewer_palette <- c(colorRampPalette(c("white", "#228B22"))(8), "#FF0000")
 custom_palette <- c(
@@ -105,27 +105,32 @@ for (pval_x in pval_ls) {
   }
 }
 
-######################### Plot Number of DEGs 
-
-
-
-
-pval_ls <- c(1, 0.05, 0.01, 0.001)
-FC_ls <- c(1, 1.2, 1.5, 2)
+######################### Plots
 
 for (pval_x in pval_ls) {
   for (FC_x in FC_ls) {
+    print(paste0("p-value threshold: ", pval_x, "; FC threshold: ", FC_x))
+    
+    plot_path <- paste0(wd, "www/Plots/pval_", str_replace(pval_x, "\\.",  ","), "_FC_", str_replace(FC_x, "\\.",  ","), "/")
+    dir.create(plot_path, recursive = T, showWarnings = F)
     
     filt_degs <- ImportFiltDatasets(paste0(wd, "data/Filtered_DEGs/"), pval_x, FC_x)
     presence_df_filt <- CreateSexDf(filt_degs, unified_annotation)
-    num_degs_filt <- NumDEGsAcrossGroups(presence_df_filt, groups_order)
-    num_degs_plot_filt <- PlotNumDEGsFaceted(num_degs_filt, custom_palette)
     
-    plot_path <- paste0(wd, "data/Plots/pval_", str_replace(pval_x, "\\.",  ","), "_FC_", str_replace(FC_x, "\\.",  ","), "/")
-    dir.create(plot_path, recursive = T, showWarnings = F)
+    # Number of DEGs
+    #num_degs_filt <- NumDEGsAcrossGroups(presence_df_filt, groups_order)
+    #num_degs_plot_filt <- PlotNumDEGsFaceted(num_degs_filt, custom_palette)
+    #png(paste0(plot_path, "Number_of_DEGs.png"), res = 300, units = 'in', height = 22, width = 15)
+    #print(num_degs_plot_filt)
+    #dev.off()
     
-    png(paste0(plot_path, "Number_of_DEGs.png"), res = 300, units = 'in', height = 22, width = 15)
-    print(num_degs_plot_filt)
+    # Chr fractions
+    gene_counts_filt <- CreateCountDfs(presence_df_filt)
+    faceted_chr_fraction <- PlotChrFraction(gene_counts_filt)
+    png(paste0(plot_path, "Chr_fractions.png"), res = 300, units = 'in', height = 22, width = 15)
+    print(faceted_chr_fraction)
     dev.off()
   }
 }
+
+
