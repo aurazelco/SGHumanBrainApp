@@ -122,13 +122,17 @@ FilterDs <- function(list_ds, pval, FC) {
   filt_ds <- list()
   for (group_id in names(list_ds)) {
     group_ls <- list()
+    group_names <- vector()
     for (ct_id in names(list_ds[[group_id]])) {
       ct_ls <- list("F" = Filter_gene(list_ds[[group_id]][[ct_id]][["F"]], pval, FC),
                     "M" = Filter_gene(list_ds[[group_id]][[ct_id]][["M"]], pval, FC))
       ct_ls <- ct_ls[lapply(ct_ls,length)>0]
-      group_ls <- append(group_ls, list(ct_ls))
+      if (length(ct_ls)==2) {
+        group_ls <- append(group_ls, list(ct_ls)) 
+        group_names <- c(group_names, ct_id)
+      }
     }
-    names(group_ls) <- names(list_ds[[group_id]])
+    names(group_ls) <- group_names
     group_ls <- group_ls[lapply(group_ls,length)>0]
     filt_ds <- append(filt_ds, list(group_ls))
   }
@@ -369,3 +373,98 @@ PlotChrFraction <- function(gene_count_dfs) {
   return(chr_fractions)
 }
 
+
+# 19. Calculates the genes whihc are most expressed in one sex compared to the other
+  # Input:
+  # Return:
+
+CalculateMostDiffGenes <- function(genes_all_presence, sex, other_sex) {
+  sex_count <- as.data.frame(table(genes_all_presence[which(genes_all_presence$presence=="Yes" & genes_all_presence$sex==sex), "gene_id"]))
+  sex_count$sex <- rep(sex, nrow(sex_count))
+  other_sex_count <- as.data.frame(table(genes_all_presence[which((genes_all_presence$gene_id %in% unique(sex_count$Var1)) & genes_all_presence$sex==other_sex & genes_all_presence$presence=="Yes"), "gene_id"]))
+  other_sex_count$sex <- rep(other_sex, nrow(other_sex_count))
+  sex_count <- rbind(sex_count, other_sex_count)
+  colnames(sex_count) <- c("gene_id", "count", "sex")
+  sex_count <- complete(sex_count, gene_id, sex)
+  sex_count[which(is.na(sex_count$count)), "count"] <- 0
+  
+  abs_diff_sex <- data.frame("gene_id"=unique(sex_count$gene_id))
+  abs_diff_sex$sex_diff <- rep(NA, nrow(abs_diff_sex))
+  for (i in abs_diff_sex$gene_id) {
+    abs_diff_sex[which(abs_diff_sex$gene_id==i), "sex_diff"] <- sex_count[which(sex_count$sex==sex & sex_count$gene_id==i), "count"] - sex_count[which(sex_count$sex==other_sex & sex_count$gene_id==i), "count"]
+  }
+  abs_diff_sex <- abs_diff_sex[which(abs_diff_sex$sex_diff > 0 ),]
+  abs_diff_sex <- abs_diff_sex[order(abs_diff_sex$sex_diff, decreasing = T), ]
+  abs_diff_sex$gene_id <- factor(abs_diff_sex$gene_id, unique(abs_diff_sex$gene_id))
+  return(abs_diff_sex)
+}
+
+# 20. 
+
+ExtractTop20DiffGenes <- function(abs_diff_F, abs_diff_M, genes_all_presence) {
+  top10F <- as.character(abs_diff_F[1:10, "gene_id"])
+  top10M <- as.character(abs_diff_M[1:10, "gene_id"])
+  common_genes_sex <- intersect(top10F, top10M)
+  `%!in%` <- Negate(`%in%`)
+  
+  if (length(common_genes_sex) > 0 ) {
+    top10F_u <- top10F[which(top10F %!in% common_genes_sex)]
+    top10M_u <- top10M[which(top10M %!in% common_genes_sex)]
+    while (length(top10F_u) < 10 & length(top10M_u) < 10) {
+      for (i  in common_genes) {
+        if (abs_diff_F[which(abs_diff_F$gene_id==i), "sex_diff"] > abs_diff_M[which(abs_diff_M$gene_id==i), "sex_diff"]) {
+          top10F_u <- c(top10F_u, i)
+        } else {
+          top10M_u <- c(top10M_u, i)
+        }
+      }
+    }
+  } else {
+    top10F_u <- top10F
+    top10M_u <- top10M
+  }
+  
+  if (length(top10F_u) < 10) {
+    missing_genes <- as.character(abs_diff_F$gene_id[11:(11+10 - length(top10F_u) - 1)])
+    top10F_u <- c(top10F_u, missing_genes)
+  }
+  if (length(top10M_u) < 10) {
+    missing_genes <- as.character(abs_diff_M$gene_id[11:(11+10 - length(top10M_u) - 1)])
+    top10M_u <- c(top10M_u, missing_genes)
+  }
+  
+  most_diff_genes <- c(top10F_u, top10M_u)
+  most_diff_genes <- complete(genes_all_presence[which(genes_all_presence$gene_id %in% most_diff_genes), ], gene_id, groups, sex, ct)
+  most_diff_genes$gene_id <- factor(most_diff_genes$gene_id, rev(c(top10F_u, top10M_u)))
+  return(most_diff_genes)
+}
+
+PlotTop20DiffGenes <- function(ct_df_list, groups_ordered) {
+  genes_all_presence <- do.call(rbind, ct_df_list)
+  genes_all_presence$ct <- gsub("\\..*", "", rownames(genes_all_presence))
+  abs_diff_F <- CalculateMostDiffGenes(genes_all_presence, "F", "M")
+  abs_diff_M <- CalculateMostDiffGenes(genes_all_presence, "M", "F")
+  most_diff_genes_df <- ExtractTop20DiffGenes(abs_diff_F, abs_diff_M, genes_all_presence)
+  mostdiff_plot <- ggplot(most_diff_genes_df,
+                          aes(factor(groups, groups_ordered[which(groups_ordered %in% unique(groups))]), gene_id, fill=presence)) +
+    geom_tile() +
+    scale_fill_manual(values = c("Yes"="#F8766D",
+                                 "No"="#00BFC4"),
+                      na.value = "#00BFC4",
+                      guide = guide_legend(reverse = TRUE)) +
+    facet_grid(sex ~  ct, scales = "free") +
+    labs(x="Groups", y="Genes", fill="Genes found") +
+    theme(panel.grid.major = element_blank(), 
+          panel.grid.minor = element_blank(),
+          panel.background = element_blank(), 
+          panel.spacing.x=unit(0, "lines"),
+          strip.text = element_text(size = 8, face="bold", colour = "black"),
+          plot.title = element_text(size=12, face="bold", colour = "black"),
+          axis.line = element_line(colour = "black"),
+          axis.title.y = element_text(size=12, face="bold", colour = "black"),
+          axis.title.x = element_text(size=12, face="bold", colour = "black"),
+          axis.text.x = element_text(size=8, colour = "black", vjust = 0.7, hjust=0.5, angle = 90),
+          legend.position = "bottom", 
+          legend.title = element_text(size=12, face="bold", colour = "black"))
+  return(mostdiff_plot)
+}

@@ -86,10 +86,11 @@ FC_ls <- c(1, 1.2, 1.5, 2)
 
 for (pval_x in pval_ls) {
   for (FC_x in FC_ls) {
+    print(paste0("p-value threshold: ", pval_x, "; FC threshold: ", FC_x))
     
     filt_degs <- FilterDs(all_degs, pval_x, FC_x)
     
-    out_path <- paste0("data/Filtered_DEGs/pval_", str_replace(pval_x, "\\.",  ","), "_FC_", str_replace(FC_x, "\\.",  ","), "/")
+    out_path <- paste0(wd, "data/Filtered_DEGs/pval_", str_replace(pval_x, "\\.",  ","), "_FC_", str_replace(FC_x, "\\.",  ","), "/")
     dir.create(out_path, recursive = T, showWarnings = F)
     
     for (group_id in names(filt_degs)) {
@@ -125,11 +126,18 @@ for (pval_x in pval_ls) {
     #dev.off()
     
     # Chr fractions
-    gene_counts_filt <- CreateCountDfs(presence_df_filt)
-    faceted_chr_fraction <- PlotChrFraction(gene_counts_filt)
-    png(paste0(plot_path, "Chr_fractions.png"), res = 300, units = 'in', height = 22, width = 15)
-    print(faceted_chr_fraction)
+    #gene_counts_filt <- CreateCountDfs(presence_df_filt)
+    #faceted_chr_fraction <- PlotChrFraction(gene_counts_filt)
+    #png(paste0(plot_path, "Chr_fractions.png"), res = 300, units = 'in', height = 22, width = 15)
+    #print(faceted_chr_fraction)
+    #dev.off()
+    
+    # top 20 most different genes
+    mostdiff <- PlotTop20DiffGenes(presence_df_filt, groups_order)
+    png(paste0(plot_path, "top_20_most_diff_genes.png"), res = 300, units = 'in', height = 8, width = 14)
+    print(mostdiff)
     dev.off()
+    
   }
 }
 

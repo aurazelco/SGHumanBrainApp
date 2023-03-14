@@ -110,21 +110,26 @@ DEGsUI <- function(id, label = "degs"){
     p("Please wait few moments for all graphs to be generated."),
     br(),
     br(),
-    box( height = 1300, width = 900,
-        title='The number of sex-biased DEGs',
-        imageOutput(NS(id,"num_degs_plot"))
+    fluidRow(
+         column(6,
+                box( height = 1300, width = 450,
+                strong('The number of sex-biased DEGs'),
+                imageOutput(NS(id,"num_degs_plot"))),
+                downloadButton(NS(id,'save_chr_fraction_plot'), 'Download plot as PNG')),
+         column(6,
+                box( height = 1300, width = 450,
+                strong('Shared DEGs among datasets, colored by chromosome annotation'),
+                imageOutput(NS(id,"chr_fraction"))),
+                downloadButton(NS(id,'save_num_degs_plot'), 'Download plot as PNG'))
     ),
     br(),
-    fluidRow(column(3, downloadButton(NS(id,'save_num_degs_plot'), 'Download plot as PNG'))
+    box( height = 600, width = 450,
+         column(6,
+                strong('Top 20 most differentially present genes'),
+                imageOutput(NS(id,"mostdiffgenes")))
     ),
     br(),
-    box( height = 1300, width = 900,
-         title='Shared DEGs among datasets, colored by chromosome annotation',
-         imageOutput(NS(id,"chr_fraction"))
-    ),
-    br(),
-    fluidRow(column(3, downloadButton(NS(id,'save_chr_fraction_plot'), 'Download plot as PNG'))
-    )
+    fluidRow(column(3, downloadButton(NS(id,'save_mostdiffgenes_plot'), 'Download plot as PNG')))
   )
 }
 
@@ -182,6 +187,23 @@ DEGsServer <- function(id) {
         file.copy(normalizePath(file.path(paste0("www/Plots/pval_", 
                                                  str_replace(input$pval, "\\.",  ","), "_FC_", str_replace(input$FC, "\\.",  ","), 
                                                  "/Chr_fractions.png"))), file)
+      }
+    )  
+    
+    output$mostdiffgenes <- renderImage({
+      filename <- normalizePath(file.path(paste0("www/Plots/pval_", 
+                                                 str_replace(input$pval, "\\.",  ","), "_FC_", str_replace(input$FC, "\\.",  ","), 
+                                                 "/top_20_most_diff_genes.png")))
+      list(src = filename, height = 400, width = 600)
+    }, deleteFile = FALSE)
+    
+    output$save_mostdiffgenes_plot <- downloadHandler(
+      filename = paste0("Top_20_most_diff_genes_pval_", str_replace(input$pval, "\\.",  ","), "_FC_", str_replace(input$FC, "\\.",  ","), ".png"),
+      contentType = "image/png",
+      content = function(file) {
+        file.copy(normalizePath(file.path(paste0("www/Plots/pval_", 
+                                                 str_replace(input$pval, "\\.",  ","), "_FC_", str_replace(input$FC, "\\.",  ","), 
+                                                 "/top_20_most_diff_genes.png"))), file)
       }
     )  
     
