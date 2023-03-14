@@ -63,6 +63,8 @@ groups_order <- c("Velmeshev_2nd_trimester",
 )
 
 all_degs <- ImportDatasets(paste0(wd, "data/Unfiltered_DEGs/"))
+x_escapees <- read.table(paste0(wd, "data/extra_files/escape_Xchr.txt"), sep="\t", skip = 2)
+
 
 brewer_palette <- c(colorRampPalette(c("white", "#228B22"))(8), "#FF0000")
 custom_palette <- c(
@@ -117,6 +119,8 @@ for (pval_x in pval_ls) {
     
     filt_degs <- ImportFiltDatasets(paste0(wd, "data/Filtered_DEGs/"), pval_x, FC_x)
     presence_df_filt <- CreateSexDf(filt_degs, unified_annotation)
+    all_genes_filt <- do.call(rbind, presence_df_filt)
+    all_genes_filt$ct <- gsub("\\..*", "", rownames(all_genes_filt))
     
     # Number of DEGs
     #num_degs_filt <- NumDEGsAcrossGroups(presence_df_filt, groups_order)
@@ -132,10 +136,22 @@ for (pval_x in pval_ls) {
     #print(faceted_chr_fraction)
     #dev.off()
     
-    # top 20 most different genes
-    mostdiff <- PlotTop20DiffGenes(presence_df_filt, groups_order)
-    png(paste0(plot_path, "top_20_most_diff_genes.png"), res = 300, units = 'in', height = 8, width = 14)
-    print(mostdiff)
+    # Top 20 most different genes - presence heatmap
+    #mostdiff <- PlotTop20DiffGenes(all_genes_filt, groups_order)
+    #png(paste0(plot_path, "top_20_most_diff_genes.png"), res = 300, units = 'in', height = 8, width = 14)
+    #print(mostdiff)
+    #dev.off()
+    
+    # Presence of mitochondrial genes (MT)
+    MTgenes <- PlotMTgenes(all_genes_filt, groups_order)
+    png(paste0(plot_path, "MT_genes.png"), res = 300, units = 'in', height = 8, width = 14)
+    print(MTgenes)
+    dev.off()
+    
+    # Presence of X-escaping genes
+    Xescapees <- PlotXescapees(all_genes_filt, groups_order, x_escapees)
+    png(paste0(plot_path, "X_escaping_genes.png"), res = 300, units = 'in', height = 8, width = 14)
+    print(Xescapees)
     dev.off()
     
   }

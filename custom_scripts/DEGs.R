@@ -123,13 +123,32 @@ DEGsUI <- function(id, label = "degs"){
                 downloadButton(NS(id,'save_num_degs_plot'), 'Download plot as PNG'))
     ),
     br(),
-    box( height = 600, width = 450,
-         column(6,
-                strong('Top 20 most differentially present genes'),
-                imageOutput(NS(id,"mostdiffgenes")))
+    box( height = 900, width = 1200,
+        strong('Top 20 most differentially present genes'),
+        imageOutput(NS(id,"mostdiffgenes"))),
+    column(3,
+           downloadButton(NS(id,'save_mostdiffgenes_plot'), 'Download plot as PNG')
+           ),
+    br(),
+    br(),
+    box( height = 900, width = 1200,
+        strong('Mitochondrial genes'),
+        imageOutput(NS(id,"MTgenes"))
+        ),
+    column(3,
+           downloadButton(NS(id,'save_MTgenes_plot'), 'Download plot as PNG')
     ),
     br(),
-    fluidRow(column(3, downloadButton(NS(id,'save_mostdiffgenes_plot'), 'Download plot as PNG')))
+    br(),
+    box( height = 900, width = 1200,
+        strong('X-escaping genes'),
+        imageOutput(NS(id,"Xescapinggenes"))
+    ),
+    column(3,
+           downloadButton(NS(id,'save_Xescapinggenes_plot'), 'Download plot as PNG')
+    ),
+    br(),
+    br()
   )
 }
 
@@ -194,7 +213,7 @@ DEGsServer <- function(id) {
       filename <- normalizePath(file.path(paste0("www/Plots/pval_", 
                                                  str_replace(input$pval, "\\.",  ","), "_FC_", str_replace(input$FC, "\\.",  ","), 
                                                  "/top_20_most_diff_genes.png")))
-      list(src = filename, height = 400, width = 600)
+      list(src = filename, height = 800, width = 1400)
     }, deleteFile = FALSE)
     
     output$save_mostdiffgenes_plot <- downloadHandler(
@@ -204,6 +223,40 @@ DEGsServer <- function(id) {
         file.copy(normalizePath(file.path(paste0("www/Plots/pval_", 
                                                  str_replace(input$pval, "\\.",  ","), "_FC_", str_replace(input$FC, "\\.",  ","), 
                                                  "/top_20_most_diff_genes.png"))), file)
+      }
+    )  
+    
+    output$MTgenes <- renderImage({
+      filename <- normalizePath(file.path(paste0("www/Plots/pval_", 
+                                                 str_replace(input$pval, "\\.",  ","), "_FC_", str_replace(input$FC, "\\.",  ","), 
+                                                 "/MT_genes.png")))
+      list(src = filename, height = 800, width = 1400)
+    }, deleteFile = FALSE)
+    
+    output$save_mostdiffgenes_plot <- downloadHandler(
+      filename = paste0("MT_genes_pval_", str_replace(input$pval, "\\.",  ","), "_FC_", str_replace(input$FC, "\\.",  ","), ".png"),
+      contentType = "image/png",
+      content = function(file) {
+        file.copy(normalizePath(file.path(paste0("www/Plots/pval_", 
+                                                 str_replace(input$pval, "\\.",  ","), "_FC_", str_replace(input$FC, "\\.",  ","), 
+                                                 "/MT_genes.png"))), file)
+      }
+    )  
+    
+    output$Xescapinggenes <- renderImage({
+      filename <- normalizePath(file.path(paste0("www/Plots/pval_", 
+                                                 str_replace(input$pval, "\\.",  ","), "_FC_", str_replace(input$FC, "\\.",  ","), 
+                                                 "/X_escaping_genes.png")))
+      list(src = filename, height = 800, width = 1400)
+    }, deleteFile = FALSE)
+    
+    output$save_Xescapinggenes_plot <- downloadHandler(
+      filename = paste0("X_escaping_genes_pval_", str_replace(input$pval, "\\.",  ","), "_FC_", str_replace(input$FC, "\\.",  ","), ".png"),
+      contentType = "image/png",
+      content = function(file) {
+        file.copy(normalizePath(file.path(paste0("www/Plots/pval_", 
+                                                 str_replace(input$pval, "\\.",  ","), "_FC_", str_replace(input$FC, "\\.",  ","), 
+                                                 "/X_escaping_genes.png"))), file)
       }
     )  
     

@@ -375,8 +375,8 @@ PlotChrFraction <- function(gene_count_dfs) {
 
 
 # 19. Calculates the genes whihc are most expressed in one sex compared to the other
-  # Input:
-  # Return:
+  # Input: all genes with presence info, whihc sex to analyze, the pther sex to compare with
+  # Return: df with the genes ordered by descending number of difference between sex and the other sex
 
 CalculateMostDiffGenes <- function(genes_all_presence, sex, other_sex) {
   sex_count <- as.data.frame(table(genes_all_presence[which(genes_all_presence$presence=="Yes" & genes_all_presence$sex==sex), "gene_id"]))
@@ -399,7 +399,9 @@ CalculateMostDiffGenes <- function(genes_all_presence, sex, other_sex) {
   return(abs_diff_sex)
 }
 
-# 20. 
+# 20. Extracts the top 20 genes (10 per sex) that are most different in presence
+  # Input: the abs diff df for F, for M, all genes with presence info
+  # Return: df with the top 20 most different genes
 
 ExtractTop20DiffGenes <- function(abs_diff_F, abs_diff_M, genes_all_presence) {
   top10F <- as.character(abs_diff_F[1:10, "gene_id"])
@@ -439,9 +441,11 @@ ExtractTop20DiffGenes <- function(abs_diff_F, abs_diff_M, genes_all_presence) {
   return(most_diff_genes)
 }
 
-PlotTop20DiffGenes <- function(ct_df_list, groups_ordered) {
-  genes_all_presence <- do.call(rbind, ct_df_list)
-  genes_all_presence$ct <- gsub("\\..*", "", rownames(genes_all_presence))
+# 21. Calculates the most different genes and plots the presence heatmap
+  # Input: the presence unlisted df, the order of the groups
+  # Return: presence heatmap for top 20 most different genes
+
+PlotTop20DiffGenes <- function(genes_all_presence, groups_ordered) {
   abs_diff_F <- CalculateMostDiffGenes(genes_all_presence, "F", "M")
   abs_diff_M <- CalculateMostDiffGenes(genes_all_presence, "M", "F")
   most_diff_genes_df <- ExtractTop20DiffGenes(abs_diff_F, abs_diff_M, genes_all_presence)
@@ -467,4 +471,75 @@ PlotTop20DiffGenes <- function(ct_df_list, groups_ordered) {
           legend.position = "bottom", 
           legend.title = element_text(size=12, face="bold", colour = "black"))
   return(mostdiff_plot)
+}
+
+# 22. Presence heatmap for the mitochondrial genes
+  # Input: the presence unlisted df, the order of the groups
+  # Return: mitochondrial genes heatmap
+
+PlotMTgenes <- function(genes_all_presence, groups_ordered) {
+  mit_genes_ids <- c(
+                     unique(genes_all_presence$gene_id[which(grepl("^TIMM", genes_all_presence$gene_id))]),
+                     unique(genes_all_presence$gene_id[which(grepl("^TOMM", genes_all_presence$gene_id))]),
+                     unique(genes_all_presence$gene_id[which(grepl("^MT-", genes_all_presence$gene_id))])
+                     )
+  mit_genes_ids <- c("XIST", mit_genes_ids)
+  
+  mit_genes <- genes_all_presence[which(genes_all_presence$gene_id %in% mit_genes_ids), ]
+  mit_gene_count <- as.data.frame(table(mit_genes[which(mit_genes$presence=="Yes"), "gene_id"]))
+  mit_gene_count <- mit_gene_count[order(mit_gene_count$Freq, decreasing = T),]
+  mit_genes <- complete(mit_genes, gene_id, groups,sex,ct)
+  MTplot <- 
+    ggplot(mit_genes, 
+           aes(factor(groups, groups_ordered[which(groups_ordered %in% unique(groups))]), factor(gene_id, rev(unique(mit_genes_ids))), fill=presence)) +
+    geom_tile() +
+    scale_fill_manual(values = c("Yes"="#F8766D",
+                                 "No"="#00BFC4"),
+                      na.value = "#00BFC4",
+                      guide = guide_legend(reverse = TRUE)) +
+    facet_grid(sex ~ ct , scales = "free") +
+    labs(x="Groups", y="Genes", fill="Genes found") +
+    theme(panel.grid.major = element_blank(), 
+          panel.grid.minor = element_blank(),
+          panel.background = element_blank(), 
+          panel.spacing.x=unit(0, "lines"),
+          strip.text = element_text(size = 8, face="bold", colour = "black"),
+          plot.title = element_text(size=12, face="bold", colour = "black"),
+          axis.line = element_line(colour = "black"),
+          axis.title.y = element_text(size=12, face="bold", colour = "black"),
+          axis.title.x = element_text(size=12, face="bold", colour = "black"),
+          axis.text.x = element_text(size=8, colour = "black", vjust = 0.7, hjust=0.5, angle = 90),
+          legend.position = "bottom", 
+          legend.title = element_text(size=12, face="bold", colour = "black"))
+  return(MTplot)
+}
+
+# 23. Presence heatmap of X-escaping genes
+  # Input: the presence unlisted df, the order of the groups
+  # Return: presence heatmap fo X-escaping genes
+
+PlotXescapees <- function(genes_all_presence, groups_ordered, x_escapees_df) {
+  Xescaping_plot <- 
+  ggplot(complete(genes_all_presence[which(genes_all_presence$gene_id %in% x_escapees_df$V2), ], gene_id, groups, sex, ct), 
+         aes(factor(groups, groups_ordered[which(groups_ordered %in% unique(groups))]), gene_id, fill=presence)) +
+    geom_tile() +
+    scale_fill_manual(values = c("Yes"="#F8766D",
+                                 "No"="#00BFC4"),
+                      na.value = "#00BFC4",
+                      guide = guide_legend(reverse = TRUE)) +
+    facet_grid(sex ~ ct , scales = "free") +
+    labs(x="Groups", y="Genes", fill="Genes found") +
+    theme(panel.grid.major = element_blank(), 
+          panel.grid.minor = element_blank(),
+          panel.background = element_blank(), 
+          panel.spacing.x=unit(0, "lines"),
+          strip.text = element_text(size = 8, face="bold", colour = "black"),
+          plot.title = element_text(size=12, face="bold", colour = "black"),
+          axis.line = element_line(colour = "black"),
+          axis.title.y = element_text(size=12, face="bold", colour = "black"),
+          axis.title.x = element_text(size=12, face="bold", colour = "black"),
+          axis.text.x = element_text(size=8, colour = "black", vjust = 0.7, hjust=0.5, angle = 90),
+          legend.position = "bottom", 
+          legend.title = element_text(size=12, face="bold", colour = "black"))
+  return(Xescaping_plot)
 }
