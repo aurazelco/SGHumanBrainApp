@@ -1,10 +1,13 @@
 # 0. Import libraries
+library(readxl) # to import Excel files
 library(biomaRt) # to query to which chromosome the shared genes belong to
 library(scales) # to set the palette to be used in the PlotDEGsOverlap function
 library(stringr)  # to modify and harmonize names
 library(RColorBrewer)  # to set a palette for the number of DEGs palette
 library(ggplot2) # to plot
 library(tidyr) # to clean and re-organize dfs
+library(rjson) # to import the json files containing the genes associated with the corresponding hormone
+
 
 # 1. Import data for each ct
   # Input: the path where to find the DEGs for each cell type within a dataset, file extension, where to find row names
@@ -542,4 +545,252 @@ PlotXescapees <- function(genes_all_presence, groups_ordered, x_escapees_df) {
           legend.position = "bottom", 
           legend.title = element_text(size=12, face="bold", colour = "black"))
   return(Xescaping_plot)
+}
+
+# 24. Calculates the % of known markers in the DEGs
+  # Input: the presence df, the ct to plot, the gene lists
+  # Return: the percent df
+
+RefPerc <- function(ref_presence_df, ref_ct_id, sex_df, plot_titles) {
+  pos_markers <- ref_presence_df[which(ref_presence_df$ref_ct==ref_ct_id), ]
+  tot_genes <- vector()
+  tot_names <- vector()
+  num_pos <- vector()
+  for (id in unique(pos_markers$groups)) {
+    for (ct in unique(pos_markers[which(pos_markers$groups==id), "group_id_ct"])) {
+      tot_names <- c(tot_names, paste(id, ct, "F", sep = "/"), paste(id, ct, "M", sep = "/"))
+      num_pos <- c(num_pos, length(pos_markers[which(pos_markers$groups==id & pos_markers$group_id_ct==ct & pos_markers$sex=="F" & pos_markers$presence=="Yes"), "gene_ids"]))
+      num_pos <- c(num_pos, length(pos_markers[which(pos_markers$groups==id & pos_markers$group_id_ct==ct & pos_markers$sex=="M" & pos_markers$presence=="Yes"), "gene_ids"]))
+      tot_genes <- c(tot_genes, length(sex_df[which(sex_df$groups==id & sex_df$ct==ct & sex_df$sex=="F"), "gene_id"]))
+      tot_genes <- c(tot_genes, length(sex_df[which(sex_df$groups==id & sex_df$ct==ct & sex_df$sex=="M"), "gene_id"]))
+    }
+  }
+  ref_perc <- data.frame("ref_ct"=rep(plot_titles[ref_ct_id], length(tot_names)), tot_names, num_pos, tot_genes)
+  ref_perc <- separate(ref_perc, tot_names, into = c("groups", "ct", "sex"), sep = "/")
+  ref_perc$perc <- ref_perc$num_pos * 100 / ref_perc$tot_genes
+  return(ref_perc)
+}
+
+# 25. Plot the presence number of genes as percentage
+# Input: the presence df, the groups order
+# Return: the plot
+
+PlotBarPlotRefPerc <- function(ref_perc, groups_ordered) {
+  ref_plot <- ggplot(ref_perc, aes(factor(groups, groups_ordered[which(groups_ordered %in% groups)]), perc, fill = ref_ct)) +
+    geom_bar(stat="identity", color="black", position = "dodge") +
+    facet_grid(sex ~ ct, scales = "free") +
+    labs(x="Groups", y="Markers %", fill="Reference cell types") +
+    theme(panel.grid.major = element_blank(), 
+          panel.grid.minor = element_blank(),
+          panel.background = element_blank(), 
+          panel.spacing.x=unit(0, "lines"),
+          strip.text = element_text(size = 8, face="bold", colour = "black"),
+          plot.title = element_text(size=12, face="bold", colour = "black"),
+          axis.line = element_line(colour = "black"),
+          axis.title.x = element_text(size=12, face="bold", colour = "black"),
+          axis.text.x = element_text(size=8, colour = "black", vjust = 0.7, hjust=0.5, angle = 90),
+          axis.ticks.x=element_blank(),
+          axis.title.y = element_text(size=12, face="bold", colour = "black"),
+          axis.text.y = element_text(size=8, colour = "black"),
+          axis.ticks.y = element_blank(),
+          legend.position = "bottom", 
+          legend.title = element_text(size=12, face="bold", colour = "black"))
+  return(ref_plot)
+}
+
+# 26. Plots if gebes from a reference df are found or not in the DEGs
+  # Input: the dataframe containing all DEGs, the reference df, the order in which plot the groups 
+    # (and which groups to plot), the vector to use for plot titles
+  # Return: plot
+
+PlotPercRef <- function(sex_df, ref_df, groups_ordered, plot_titles){
+  sex_df_filt <- sex_df[which(sex_df$groups %in% groups_ordered), ]
+  presence <- vector()
+  ids <- vector()
+  gene_ids <- vector()
+  for (sex_id in c("F", "M")) {
+    for (ct in unique(ref_df$Celltype)) {
+      ref_genes <- ref_df[which(ref_df$Celltype==ct), "gene"]
+      for (group_id in unique(sex_df_filt[which(sex_df_filt$sex==sex_id), "groups"])) {
+        for (ct_id in unique(sex_df_filt[which(sex_df_filt$sex==sex_id & sex_df_filt$groups==group_id), "ct"])) {
+          presence <- c(presence, 
+                        ifelse(ref_df[which(ref_df$Celltype==ct), "gene"] %in% sex_df_filt[which(sex_df_filt$sex==sex_id & sex_df_filt$groups==group_id & sex_df_filt$ct==ct_id), "gene_id"],
+                               "Yes", "No"))
+          ids <- c(ids, 
+                   rep(paste(sex_id, ct, group_id, ct_id, sep = "/"), length(ref_genes)))
+          gene_ids <- c(gene_ids, ref_genes)
+          
+        }
+      }
+    }
+  }
+  ref_presence_df <- data.frame(ids, gene_ids, presence)
+  ref_presence_df <- separate(ref_presence_df, ids, into=c("sex", "ref_ct", "groups", "group_id_ct"), sep = "/")
+  ref_presence_df$groups <- factor(ref_presence_df$groups, groups_ordered[which(groups_ordered %in% unique(ref_presence_df$groups))])
+  ref_presence_df <- ref_presence_df[order(ref_presence_df$groups), ]
+  ref_perc <- lapply(1:length(unique(ref_presence_df$ref_ct)), function(x) RefPerc(ref_presence_df, unique(ref_presence_df$ref_ct)[x], sex_df, plot_titles))
+  ref_perc <- do.call(rbind, ref_perc)
+  ref_plot <- PlotBarPlotRefPerc(ref_perc, groups_ordered)
+  return(ref_plot)
+}
+
+# 27. Creates a dataframe with only the gens related to know diseases
+  # Input:the reference dataframe with the diseases and genes, 
+    # one dataframe containing all DEGs, the reference name to be used for the output folder
+  # Return: the DEG dataframe with the presence of genes-associated genes and saves the results to CSV file
+
+CreateDiseaseDf <- function(ref, sex_dfs) {
+  dis_genes <- vector()
+  group_id <- vector()
+  for (dis_family in unique(ref$Disease_group)) {
+    for (dis in unique(ref[which(ref$Disease_group==dis_family), "Disease"])) {
+      dis_genes <- c(dis_genes, unlist(str_split(ref[which(ref$Disease_group==dis_family & ref$Disease==dis), "Affected_gene"], pattern = ", ")))
+      group_id <- c(group_id, rep(paste(dis_family, dis, sep = "/"), length(unlist(str_split(ref[which(ref$Disease_group==dis_family & ref$Disease==dis), "Affected_gene"], pattern = ", ")))))
+    }
+  }
+  ref_df <- data.frame(group_id, dis_genes)
+  sex_dfs$id <- paste(sex_dfs$groups, sex_dfs$sex, sex_dfs$ct, sep = "/")
+  dis_presence <- vector()
+  dis_names <- vector()
+  deg_ids <- vector()
+  genes_ids <- vector()
+  for (id in unique(ref_df$group_id)) {
+    for (deg in unique(sex_dfs$id)) {
+      genes_ids <- c(genes_ids, ref_df[which(ref_df$group_id==id), "dis_genes"])
+      deg_presence <- ifelse(ref_df[which(ref_df$group_id==id), "dis_genes"] %in% sex_dfs[which(sex_dfs$id==deg), "gene_id"], "Yes", "No")
+      dis_presence <- c(dis_presence, deg_presence)
+      dis_names <-c(dis_names, rep(id, length(deg_presence)))
+      deg_ids <- c(deg_ids, rep(deg, length(deg_presence)))
+    }
+  }
+  ref_deg <- data.frame(dis_names, deg_ids, genes_ids, dis_presence)
+  ref_deg <- separate(ref_deg, dis_names, into = c("disease_group", "disease"), sep = "/")
+  ref_deg <- separate(ref_deg, deg_ids, into = c("groups", "sex", "ct"), sep = "/")
+  ref_deg$dis_gene_id <- paste(ref_deg$disease, ref_deg$genes_ids, sep =  " - ")
+  return(ref_deg)
+}
+
+# 28. Plot heatmap with the results of which disease-associated genes are found in the degs
+  # Iput: the DEG data frame with the presence of genes-associated genes, the disease group to plot
+  # Return: the faceted plot
+
+PlotDisDegGroup <- function(ref_deg, dis_id, groups_ordered) {
+  dis_plot <- ggplot(complete(ref_deg[which(ref_deg$disease_group==dis_id),]), aes(factor(groups, groups_ordered[which(groups_ordered %in% groups)]), dis_gene_id, fill=dis_presence)) +
+    geom_tile(color="white") +
+    facet_grid(sex ~ ct, scales = "free") +
+    labs(x="Groups", y="Disease-associated genes", fill="Genes found", title =dis_id) +
+    scale_fill_manual(values = c("Yes"="#F8766D",
+                                 "No"="#00BFC4"),
+                      na.value = "grey",
+                      guide = guide_legend(reverse = TRUE)) +
+    theme(panel.grid.major = element_blank(), 
+          panel.grid.minor = element_blank(),
+          panel.background = element_blank(), 
+          panel.spacing.x=unit(0, "lines"),
+          plot.title = element_text(size=12, face="bold", colour = "black"),
+          strip.text = element_text(size = 8, face="bold", colour = "black"),
+          axis.line = element_line(colour = "black"),
+          axis.title.x = element_text(size=12, face="bold", colour = "black"),
+          axis.text.x = element_text(size=8, colour = "black", vjust = 0.7, hjust=0.5, angle = 90),
+          axis.ticks.x=element_blank(),
+          axis.title.y = element_text(size=12, face="bold", colour = "black"),
+          axis.text.y = element_text(size=8, colour = "black", vjust = 0.7, hjust=0.5),
+          axis.ticks.y = element_blank(),
+          legend.position = "bottom", 
+          legend.title = element_text(size=12, face="bold", colour = "black"))
+  return(dis_plot)
+}
+
+# 29. Generates a df with the nunmber of found hormone targets as absoluet numbers, percetages fo the hormone gene lists and percentages of  the sex-biased DEGs
+  # Input: one dataframe with all sex-biased DEGs, the hormone gene lists in a list, and the order of the groups
+  # Return: dataframe with all the counts and percentages
+
+CreateHormonesDf <- function(sex_dfs, ref_hormones, groups_ordered) {
+  hormone_ls <- list()
+  for (horm in names(ref_hormones)) {
+    group_ids <- vector()
+    hormone_tgs <- vector()
+    bg_genes <- vector()
+    for (group_id in unique(sex_dfs$groups)) {
+      for (ct in unique(sex_dfs[which(sex_dfs$groups==group_id), "ct"])) {
+        for (sex in c("F", "M")) {
+          group_ids <- c(group_ids, paste(group_id, ct, sex, sep = "/"))
+          hormone_tgs <- c(hormone_tgs, 
+                           length(intersect(
+                             ref_hormones[[horm]], 
+                             tolower(unique(sex_dfs[which(sex_dfs$groups==group_id & sex_dfs$ct==ct &sex_dfs$sex==sex & sex_dfs$presence=="Yes"), "gene_id"])))))
+          bg_genes <- c(bg_genes, length(unique(sex_dfs[which(sex_dfs$groups==group_id & sex_dfs$ct==ct &sex_dfs$sex==sex & sex_dfs$presence=="Yes"), "gene_id"])))
+        }
+      }
+    }
+    tot_horm <- rep(length(ref_hormones[[horm]]), length(group_ids))
+    horm_df <- data.frame(group_ids, hormone_tgs, tot_horm, bg_genes)
+    horm_df$no_tgs <- horm_df$bg_genes - horm_df$hormone_tgs
+    hormone_ls <- append(hormone_ls, list(horm_df))
+  }
+  names(hormone_ls) <- str_to_title(str_replace_all(names(ref_hormones), "/", "_"))
+  hormones_df <- do.call(rbind, hormone_ls)
+  hormones_df <- cbind("hormones"=gsub("\\..*", "", rownames(hormones_df)), hormones_df)
+  rownames(hormones_df) <- NULL
+  hormones_df <- separate(hormones_df, group_ids, into = c("groups", "ct", "sex"), sep = "/", remove = T)
+  hormones_df$perc_hormones <- hormones_df$hormone_tgs * 100 / hormones_df$tot_horm
+  hormones_df$perc_degs <- hormones_df$hormone_tgs * 100 / hormones_df$bg_genes
+  return(hormones_df)
+}
+
+# 30. Calculates the enrichment of hormones in each sub group with a hypergeometric test
+  # Input: the dataframe with all the counts and percentages, the significant pvalue threshold, the minimum number of groups to keep
+  # Return: dataframe with all the significant pvalues
+
+HormoneEnrichment <- function(hormones_df, pval_thresh=0.05, min_num_cond=1) {
+  pval_names <- vector()
+  pvalues <- vector()
+  for (horm in unique(hormones_df$hormones)) {
+    for (ct in unique(hormones_df[which(hormones_df$hormones==horm), "ct"])) {
+      for (cond in unique(hormones_df[which(hormones_df$hormones==horm & hormones_df$ct==ct), "groups"])) {
+        for (sex in c("F", "M")) {
+          pval <- phyper(
+            as.numeric(hormones_df[which(hormones_df$hormones==horm & hormones_df$ct==ct & hormones_df$groups==cond & hormones_df$sex==sex), "hormone_tgs"]) - 1,
+            as.numeric(hormones_df[which(hormones_df$hormones==horm & hormones_df$ct==ct & hormones_df$groups==cond & hormones_df$sex==sex), "bg_genes"]),
+            10000 - as.numeric(unique(hormones_df[which(hormones_df$hormones==horm), "tot_horm"])),
+            as.numeric(unique(hormones_df[which(hormones_df$hormones==horm), "tot_horm"])),
+            lower.tail= FALSE
+          )
+          pvalues <- c(pvalues, pval)
+          pval_names <- c(pval_names, paste(horm, ct, cond, sex, sep="/"))
+        }
+      }
+    }
+  }
+  pval_df <- data.frame(pval_names, pvalues)
+  pval_df <- separate(pval_df, pval_names, into = c("hormone_id", "ct", "groups", "sex"), sep = "/", remove = T)
+  pval_df<- pval_df[which(pval_df$pvalues < pval_thresh), ]
+  pval_df <- pval_df %>% group_by(hormone_id) %>% filter(n() > min_num_cond)
+  return(pval_df)
+}
+
+# 31. Plots the results of the hormone analysis as one faceted plot
+  # Input: dataframe with all the significant pvalues, the order of the groups
+  # Return: p-value heatmap
+
+HmpHormoneEnrichment <- function(pval_df, groups_ordered) {
+  hormone_hmp <- 
+    ggplot(pval_df, aes(factor(groups, groups_ordered[which(groups_ordered %in% unique(groups))]), ct, fill=pvalues)) +
+      geom_tile() +
+      facet_grid(hormone_id ~ sex, scales = "free") +
+      scale_fill_gradient(low="red", high="blue", na.value = "grey") +
+      labs(x="Groups", y="Cell types", fill="P-values") +
+      theme(panel.grid.major = element_blank(), 
+            panel.grid.minor = element_blank(),
+            panel.background = element_blank(), 
+            axis.line = element_line(colour = "black"),
+            strip.text.x = element_text(size = 8, face="bold", colour = "black"),
+            strip.text.y = element_text(size=8, face="bold", colour = "black",angle = 0),
+            axis.title.x = element_text(size=12, face="bold", colour = "black"),
+            axis.text.x = element_text(size=8, colour = "black", vjust = 0.7, hjust=0.5, angle = 90),
+            axis.ticks.x=element_blank(),
+            axis.title.y = element_text(size=12, face="bold", colour = "black"),
+            legend.position = "bottom", 
+            legend.title = element_text(size=12, face="bold", colour = "black"))
+  return(hormone_hmp)
 }

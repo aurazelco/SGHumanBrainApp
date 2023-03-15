@@ -1,12 +1,7 @@
-###################################
 
-
-######################### Generate Filtered DEGs
+######################### Initial set-up and definition of core variables
 wd <- "/Users/aurazelco/Desktop/Lund_MSc/Thesis/HumanBrainSexSingleCell/"
 source(paste0(wd, "custom_scripts/Generate_output_files_func.R"))
-
-
-# Imports the unfiltered DEGs and generates another list, plus defines common annotation and group order to be followed in plots
 
 # manually decided how to combine the sub-celltypes
 unified_annotation <- c("CXCL14 IN" = "Interneurons",
@@ -62,30 +57,16 @@ groups_order <- c("Velmeshev_2nd_trimester",
                   "PRJNA544731_Multiple Sclerosis" 
 )
 
+# Imports original dex-biased DEGs
 all_degs <- ImportDatasets(paste0(wd, "data/Unfiltered_DEGs/"))
-x_escapees <- read.table(paste0(wd, "data/extra_files/escape_Xchr.txt"), sep="\t", skip = 2)
 
+######################### Generate Filtered DEGs
 
-brewer_palette <- c(colorRampPalette(c("white", "#228B22"))(8), "#FF0000")
-custom_palette <- c(
-  "Velmeshev_2nd_trimester"=brewer_palette[1],           
-  "Velmeshev_3rd_trimester"=brewer_palette[2], 
-  "Velmeshev_0_1_years"=brewer_palette[3],                
-  "Velmeshev_1_2_years"=brewer_palette[4],            
-  "Velmeshev_2_4_years"=brewer_palette[5],  
-  "Velmeshev_10_20_years"=brewer_palette[6],      
-  "Velmeshev_Adults"=brewer_palette[7],
-  "GSE157827_Healthy"=brewer_palette[8],              
-  "GSE174367_Healthy"=brewer_palette[8],               
-  "PRJNA544731_Healthy"=brewer_palette[8], 
-  "GSE157827_Alzheimer's disease"=brewer_palette[9],
-  "GSE174367_Alzheimer's disease"=brewer_palette[9],
-  "PRJNA544731_Multiple Sclerosis"=brewer_palette[9] 
-)
-
+# Adjusted p-value and FC thresholds
 pval_ls <- c(1, 0.05, 0.01, 0.001)
 FC_ls <- c(1, 1.2, 1.5, 2)
 
+# Generates filtered files and saves them in specific sub-folders
 for (pval_x in pval_ls) {
   for (FC_x in FC_ls) {
     print(paste0("p-value threshold: ", pval_x, "; FC threshold: ", FC_x))
@@ -108,8 +89,56 @@ for (pval_x in pval_ls) {
   }
 }
 
+######################### Extra files needed for plots
+
+# X-escaping genes
+x_escapees <- read.table(paste0(wd, "data/extra_files/escape_Xchr.txt"), sep="\t", skip = 2)
+
+# McKenzie et al 2018 - cell type markers
+McKenzie <- as.data.frame(read_xlsx(paste0(wd, "data/extra_files/McKenzie_2018_suppl.xlsx"),
+                                    sheet = 'top_human_enrich',
+                                    skip = 2))
+
+McKenzie_ct_names <- c(
+  "ast" = "Astrocytes", 
+  "end" = "Endothelial Cells",
+  "mic" = "Microglia",
+  "neu" = "Neurons",
+  "oli" = "Oligodendrocytes"
+)
+
+# Chlamydas et al 2022 - table for disease markers
+Chlamydas <- as.data.frame(read_xlsx(paste0(wd, "data/extra_files/Chlamydas_2022.xlsx"), skip = 1))
+colnames(Chlamydas) <- str_replace_all(colnames(Chlamydas), " ", "_")
+Chlamydas <- Chlamydas[, c(1,2,4)]
+Chlamydas <- drop_na(Chlamydas)
+
+# Jadhav et al 2022 - Hormone targets 
+hormones <- fromJSON(file=paste0(wd, "data/extra_files/hgv1_hormone_genes.json"))
+hormones_filt <- hormones[names(which(lapply(hormones, length)>=10))]
+
+# Sets th epalette for a plot generated later on
+brewer_palette <- c(colorRampPalette(c("white", "#228B22"))(8), "#FF0000")
+custom_palette <- c(
+  "Velmeshev_2nd_trimester"=brewer_palette[1],           
+  "Velmeshev_3rd_trimester"=brewer_palette[2], 
+  "Velmeshev_0_1_years"=brewer_palette[3],                
+  "Velmeshev_1_2_years"=brewer_palette[4],            
+  "Velmeshev_2_4_years"=brewer_palette[5],  
+  "Velmeshev_10_20_years"=brewer_palette[6],      
+  "Velmeshev_Adults"=brewer_palette[7],
+  "GSE157827_Healthy"=brewer_palette[8],              
+  "GSE174367_Healthy"=brewer_palette[8],               
+  "PRJNA544731_Healthy"=brewer_palette[8], 
+  "GSE157827_Alzheimer's disease"=brewer_palette[9],
+  "GSE174367_Alzheimer's disease"=brewer_palette[9],
+  "PRJNA544731_Multiple Sclerosis"=brewer_palette[9] 
+)
+
+
 ######################### Plots
 
+# Adjusted p-value and FC thresholds
 for (pval_x in pval_ls) {
   for (FC_x in FC_ls) {
     print(paste0("p-value threshold: ", pval_x, "; FC threshold: ", FC_x))
@@ -143,18 +172,48 @@ for (pval_x in pval_ls) {
     #dev.off()
     
     # Presence of mitochondrial genes (MT)
-    MTgenes <- PlotMTgenes(all_genes_filt, groups_order)
-    png(paste0(plot_path, "MT_genes.png"), res = 300, units = 'in', height = 8, width = 14)
-    print(MTgenes)
-    dev.off()
+    #MTgenes <- PlotMTgenes(all_genes_filt, groups_order)
+    #png(paste0(plot_path, "MT_genes.png"), res = 300, units = 'in', height = 8, width = 14)
+    #print(MTgenes)
+    #dev.off()
     
     # Presence of X-escaping genes
-    Xescapees <- PlotXescapees(all_genes_filt, groups_order, x_escapees)
-    png(paste0(plot_path, "X_escaping_genes.png"), res = 300, units = 'in', height = 8, width = 14)
-    print(Xescapees)
+    #Xescapees <- PlotXescapees(all_genes_filt, groups_order, x_escapees)
+    #png(paste0(plot_path, "X_escaping_genes.png"), res = 300, units = 'in', height = 8, width = 14)
+    #print(Xescapees)
+    #dev.off()
+    
+    # Percentage of McKenzie cell type markers
+    #mckenzie_perc <- PlotPercRef(all_genes_filt, McKenzie, groups_order[7:13], McKenzie_ct_names)
+    #png(paste0(plot_path, "McKenzie_perc.png"), res = 300, units = 'in', height = 8, width = 15)
+    #print(mckenzie_perc)
+    #dev.off()
+    
+    # Chlamydas disease markers
+    #chl_deg <- CreateDiseaseDf(Chlamydas, all_genes_filt)
+    #chl_hmp <- PlotDisDegGroup(chl_deg, "Neuropsychiatric diseases", groups_order)
+    #png(paste0(plot_path, "Chlamydas_hmp.png"), res = 300, units = 'in', height = 8, width = 15)
+    #print(chl_hmp)
+    #dev.off()
+    
+    # Hormone targets enrichment
+    hormones_df <- CreateHormonesDf(all_genes_filt, hormones_filt, groups_order)
+    hormones_pval <- HormoneEnrichment(hormones_df)
+    hmp_hormones <- HmpHormoneEnrichment(hormones_pval, groups_order)
+    png(paste0(plot_path, "Hormone_target_enrichment.png"), res = 300, units = 'in', height = 15, width = 10)
+    print(hmp_hormones)
     dev.off()
+    
     
   }
 }
 
+filt_degs <- ImportFiltDatasets(paste0(wd, "data/Filtered_DEGs/"), 0.05, 1.2)
+presence_df_filt <- CreateSexDf(filt_degs, unified_annotation)
+all_genes_filt <- do.call(rbind, presence_df_filt)
+all_genes_filt$ct <- gsub("\\..*", "", rownames(all_genes_filt))
+plot_path <- paste0(wd, "www/Plots/pval_1_FC_1/")
 
+png(paste0(plot_path, "Hormone_target_enrichment.png"), res = 300, units = 'in', height = 15, width = 10)
+print(test1)
+dev.off()

@@ -148,6 +148,33 @@ DEGsUI <- function(id, label = "degs"){
            downloadButton(NS(id,'save_Xescapinggenes_plot'), 'Download plot as PNG')
     ),
     br(),
+    br(),
+    box( height = 900, width = 1200,
+         strong('Percentage of cell type markers from McKenzie et al. 2018'),
+         imageOutput(NS(id,"McKenzie"))
+    ),
+    column(3,
+           downloadButton(NS(id,'save_McKenzie_plot'), 'Download plot as PNG')
+    ),
+    br(),
+    br(),
+    box( height = 900, width = 1200,
+         strong("Presence heatmaps of disease markers from Chlamydas et al. 2022"),
+         imageOutput(NS(id,"Chlamydas"))
+    ),
+    column(3,
+           downloadButton(NS(id,'save_Chlamydas_plot'), 'Download plot as PNG')
+    ),
+    br(),
+    br(),
+    box( height = 1300, width = 900,
+         strong("Hormone targets enrichment from Jadhav et al. 2022"),
+         imageOutput(NS(id,"Hormones"))
+    ),
+    column(3,
+           downloadButton(NS(id,'save_Hormones_plot'), 'Download plot as PNG')
+    ),
+    br(),
     br()
   )
 }
@@ -259,6 +286,61 @@ DEGsServer <- function(id) {
                                                  "/X_escaping_genes.png"))), file)
       }
     )  
+    
+    
+    output$McKenzie <- renderImage({
+      filename <- normalizePath(file.path(paste0("www/Plots/pval_", 
+                                                 str_replace(input$pval, "\\.",  ","), "_FC_", str_replace(input$FC, "\\.",  ","), 
+                                                 "/McKenzie_perc.png")))
+      list(src = filename, height = 800, width = 1400)
+    }, deleteFile = FALSE)
+    
+    output$save_McKenzie_plot <- downloadHandler(
+      filename = paste0("McKenzie_percentages_pval_", str_replace(input$pval, "\\.",  ","), "_FC_", str_replace(input$FC, "\\.",  ","), ".png"),
+      contentType = "image/png",
+      content = function(file) {
+        file.copy(normalizePath(file.path(paste0("www/Plots/pval_", 
+                                                 str_replace(input$pval, "\\.",  ","), "_FC_", str_replace(input$FC, "\\.",  ","), 
+                                                 "/McKenzie_perc.png"))), file)
+      }
+    )  
+    
+    output$Chlamydas <- renderImage({
+      filename <- normalizePath(file.path(paste0("www/Plots/pval_", 
+                                                 str_replace(input$pval, "\\.",  ","), "_FC_", str_replace(input$FC, "\\.",  ","), 
+                                                 "/Chlamydas_hmp.png")))
+      list(src = filename, height = 800, width = 1400)
+    }, deleteFile = FALSE)
+    
+    output$save_Chlamydas_plot <- downloadHandler(
+      filename = paste0("Chlamydas_hmp_pval_", str_replace(input$pval, "\\.",  ","), "_FC_", str_replace(input$FC, "\\.",  ","), ".png"),
+      contentType = "image/png",
+      content = function(file) {
+        file.copy(normalizePath(file.path(paste0("www/Plots/pval_", 
+                                                 str_replace(input$pval, "\\.",  ","), "_FC_", str_replace(input$FC, "\\.",  ","), 
+                                                 "/Chlamydas_hmp.png"))), file)
+      }
+    )  
+    
+    output$Hormones <- renderImage({
+      filename <- normalizePath(file.path(paste0("www/Plots/pval_", 
+                                                 str_replace(input$pval, "\\.",  ","), "_FC_", str_replace(input$FC, "\\.",  ","), 
+                                                 "/Hormone_target_enrichment.png")))
+      list(src = filename, height = 1200, width = 800)
+    }, deleteFile = FALSE)
+    
+    output$save_Hormones_plot <- downloadHandler(
+      filename = paste0("Hormone_target_enrichment_pval_", str_replace(input$pval, "\\.",  ","), "_FC_", str_replace(input$FC, "\\.",  ","), ".png"),
+      contentType = "image/png",
+      content = function(file) {
+        file.copy(normalizePath(file.path(paste0("www/Plots/pval_", 
+                                                 str_replace(input$pval, "\\.",  ","), "_FC_", str_replace(input$FC, "\\.",  ","), 
+                                                 "/Hormone_target_enrichment.png"))), file)
+      }
+    )  
+    
+    
+    
     
   })
   
