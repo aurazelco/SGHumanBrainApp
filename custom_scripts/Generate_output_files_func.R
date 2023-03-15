@@ -7,7 +7,7 @@ library(RColorBrewer)  # to set a palette for the number of DEGs palette
 library(ggplot2) # to plot
 library(tidyr) # to clean and re-organize dfs
 library(rjson) # to import the json files containing the genes associated with the corresponding hormone
-
+library(reshape2) # to re-arrange dataframes
 
 # 1. Import data for each ct
   # Input: the path where to find the DEGs for each cell type within a dataset, file extension, where to find row names
@@ -793,4 +793,169 @@ HmpHormoneEnrichment <- function(pval_df, groups_ordered) {
             legend.position = "bottom", 
             legend.title = element_text(size=12, face="bold", colour = "black"))
   return(hormone_hmp)
+}
+
+# 32. Calculate ARE df
+  # Input: the dataframe containing all genes, the ARE sites list
+  # Return: dataframe containing ARE comparison results
+
+AREdf <- function(sex_dfs, ARE_ls) {
+  df_ARE <- list()
+  for (group_id in unique(sex_dfs$groups)) {
+    for (ct_id in unique(sex_dfs[which(sex_dfs$groups==group_id), "ct"])) {
+      for (sex_id in c("F", "M")) {
+        df_id <- sex_dfs[which(sex_dfs$groups==group_id & sex_dfs$ct==ct_id & sex_dfs$sex==sex_id), ]
+        id <- paste(group_id, ct_id, sex_id, sep = "/")
+        bg <- nrow(df_id)
+        full <- length(intersect(df_id$gene_id, ARE_ls[["full"]]))
+        half <- length(intersect(df_id$gene_id, ARE_ls[["half"]]))
+        hf <- length(intersect(df_id$gene_id, ARE_ls[["hf"]]))
+        no_overlap <-bg - full - half - hf
+        df_ARE_id <- data.frame(id, bg, full, half, hf, no_overlap)
+        df_ARE <- append(df_ARE, list(df_ARE_id))
+      }
+    }
+  }
+  df_ARE <- do.call(rbind, df_ARE)
+  return(df_ARE)
+}
+
+# 33. Calculate percentages of ARE sites
+  # Input: dataframe containing ARE comparison results, the sex to be analyzed
+  # Return: dataframe with all ARE results, including percentages
+
+AREdfPerc <- function(df_ARE) {
+  df_ARE <- transform(df_ARE, full_perc = full * 100 / bg)
+  df_ARE <- transform(df_ARE, half_perc = half * 100 / bg)
+  df_ARE <- transform(df_ARE, hf_perc = hf * 100 / bg)
+  df_ARE <- transform(df_ARE, no_overlap_perc = no_overlap * 100 / bg)
+  df_ARE_perc <- df_ARE[, c(1, 7:10)]
+  df_ARE_perc <- melt(df_ARE_perc, id.vars = "id")
+  names(df_ARE_perc)[names(df_ARE_perc) == 'value'] <- 'percent'
+  names(df_ARE_perc)[names(df_ARE_perc) == 'variable'] <- 'sites'
+  df_ARE_perc <- separate(df_ARE_perc, id, into = c("groups", "ct", "sex"), remove = T, sep = "/")
+  col_factors <- c("groups", "ct", "sex")
+  df_ARE_perc[col_factors] <- lapply(df_ARE_perc[col_factors], as.factor) 
+  levels(df_ARE_perc$sites) <- c('Full', 'Half', 'Half-Full', 'None')
+  return(df_ARE_perc)
+}
+
+# 34. Calculate ERE df
+  # Input: the list of dtaframes, the sex to be analyzed, the ERE reference df
+  # Return: dataframe list containing ERE comparison results
+
+EREdf <- function(sex_dfs, ERE_gene) {
+  df_ERE <- list()
+  for (group_id in unique(sex_dfs$groups)) {
+    for (ct_id in unique(sex_dfs[which(sex_dfs$groups==group_id), "ct"])) {
+      for (sex_id in c("F", "M")) {
+        df_id <- sex_dfs[which(sex_dfs$groups==group_id & sex_dfs$ct==ct_id & sex_dfs$sex==sex_id), ]
+        id <- paste(group_id, ct_id, sex_id, sep = "/")
+        bg <- nrow(df_id)
+        ERE_overlap <- length(intersect(df_id$gene_id, ERE_gene))
+        no_overlap <- bg - ERE_overlap
+        df_ERE_id <- data.frame(id, bg, ERE_overlap, no_overlap)
+        df_ERE <- append(df_ERE, list(df_ERE_id))
+      }
+    }
+  }
+  df_ERE <- do.call(rbind, df_ERE)
+  return(df_ERE)
+}
+
+# 35. Calculate percentages of ARE sites
+  # Input: dataframe list containing ERE comparison results, the sex to be analyzed
+  # Return: dataframe with all ERE results, including percentages
+
+EREdfPerc <- function(df_ERE) {
+  df_ERE <- transform(df_ERE, ERE_perc = ERE_overlap * 100 / bg)
+  df_ERE <- transform(df_ERE, no_overlap_perc = no_overlap * 100 / bg)
+  df_ERE_perc <- df_ERE[, c(1, 5:6)]
+  df_ERE_perc <- melt(df_ERE_perc, id.vars = "id")
+  names(df_ERE_perc)[names(df_ERE_perc) == 'value'] <- 'percent'
+  names(df_ERE_perc)[names(df_ERE_perc) == 'variable'] <- 'sites'
+  df_ERE_perc <- separate(df_ERE_perc, id, into = c("groups", "ct", "sex"), remove = T, sep = "/")
+  col_factors <- c("groups", "ct", "sex")
+  df_ERE_perc[col_factors] <- lapply(df_ERE_perc[col_factors], as.factor) 
+  levels(df_ERE_perc$sites) <- c("ERE", "None")
+  return(df_ERE_perc)
+}
+
+# 36. Plot ARE results faceted
+  # Input:ARE df, the order of the groups
+  # Return: plot
+
+PlotFacetedARE <- function(ARE_perc, groups_ordered) {
+  ARE_perc$groups <- factor(ARE_perc$groups, groups_ordered)
+  ARE_perc <- ARE_perc[order(ARE_perc$groups),]
+  col_palette <- c("#39B600", "#9590FF","#D376FF" , "#FD61D1")
+  ARE_plot <- 
+    ggplot(ARE_perc, aes(sex, percent, fill=sites)) +
+      geom_bar(stat="identity", color="black", position = "stack") +
+      facet_grid(ct~groups, scales = "free", drop = T) +
+      labs(x="Groups", y="% of ARE sites", fill="Overlap ARE sites") +
+      scale_fill_manual(values = c('Full' = col_palette[4] , 'Half' = col_palette[3], 'Half-Full' = col_palette[2], 'None' = col_palette[1])) +
+      theme(panel.grid.major = element_blank(), 
+            panel.grid.minor = element_blank(),
+            panel.background = element_blank(), 
+            axis.line = element_line(colour = "black"),
+            axis.title.x = element_blank(),
+            axis.text.x = element_text(size=8, colour = "black", vjust = 0.7, hjust=0.5),
+            axis.ticks.x=element_blank(),
+            axis.title.y = element_text(size=12, face="bold", colour = "black"),
+            legend.position = "bottom", 
+            legend.title = element_text(size=12, face="bold", colour = "black"),
+            legend.text = element_text(size=8, face="bold", colour = "black"),
+            strip.text.x = element_text(size=8, face="bold", colour = "black", angle = 90),
+            strip.text.y.right = element_text(size=8, face="bold", colour = "black", angle = 0))
+  return(ARE_plot)
+}
+
+# 37. Plot ERE results faceted
+  # Input: ERE df, the order of the groups
+  # Return: nothing, saves plot instead
+
+PlotFacetedERE <- function(ERE_perc, groups_ordered) {
+  ERE_perc$groups <- factor(ERE_perc$groups, groups_ordered)
+  ERE_perc <- ERE_perc[order(ERE_perc$groups),]
+  col_palette <- c("#39B600", "#9590FF")  
+  ERE_plot <- 
+    ggplot(ERE_perc, aes(sex, percent, fill=sites)) +
+      geom_bar(stat="identity", color="black", position = "stack") +
+      facet_grid(ct~groups, scales = "free", drop = T) +
+      labs(y="% of ERE sites", fill="Overlap ERE sites") +
+      scale_fill_manual(values = c("ERE" = col_palette[2], "None" = col_palette[1])) +
+      theme(panel.grid.major = element_blank(), 
+            panel.grid.minor = element_blank(),
+            panel.background = element_blank(), 
+            axis.line = element_line(colour = "black"),
+            axis.title.x = element_blank(),
+            axis.text.x = element_text(size=8, colour = "black", vjust = 0.7, hjust=0.5),
+            axis.ticks.x=element_blank(),
+            axis.title.y = element_text(size=12, face="bold", colour = "black"),
+            legend.position = "bottom", 
+            legend.title = element_text(size=12, face="bold", colour = "black"),
+            legend.text = element_text(size=8, face="bold", colour = "black"),
+            strip.text.x = element_text(size=8, face="bold", colour = "black", angle = 90),
+            strip.text.y.right = element_text(size=8, face="bold", colour = "black", angle = 0))
+  return(ERE_plot)
+}
+
+
+# 38. MAIN
+  # Input:
+  # Return:
+
+ARE_ERE_plots <- function(sex_dfs, which_re, ARE_ls, ERE_gene, groups_ordered) {
+  sex_dfs <- sex_dfs[which(sex_dfs$presence=="Yes"), c(1,2,3,5)]
+  if (which_re=="ARE") {
+    df_ARE <- AREdf(sex_dfs, ARE_ls)
+    ARE_perc <- AREdfPerc(df_ARE)
+    re_plot <- PlotFacetedARE(ARE_perc, groups_ordered)
+  } else if (which_re=="ERE") {
+    df_ERE <- EREdf(sex_dfs, ERE_gene)
+    ERE_perc <- EREdfPerc(df_ERE)
+    re_plot <- PlotFacetedERE(ERE_perc, groups_ordered)
+  }
+  return(re_plot)
 }

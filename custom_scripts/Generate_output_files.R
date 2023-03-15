@@ -117,6 +117,16 @@ Chlamydas <- drop_na(Chlamydas)
 hormones <- fromJSON(file=paste0(wd, "data/extra_files/hgv1_hormone_genes.json"))
 hormones_filt <- hormones[names(which(lapply(hormones, length)>=10))]
 
+# AREs and EREs - Wilson et al. 2016, Bourdeau et al 2004, 
+ARE <- read_excel(paste0(wd, "data/extra_files/AREsitesHuman.xlsx"),skip=1)
+colnames(ARE) <- c("fullsites", "halfsites")
+ARE_sites <- list("full" = unique(setdiff(ARE$fullsites, ARE$halfsites)), 
+               "half" = unique(setdiff(ARE$halfsites, ARE$fullsites)),
+               "hf" = unique(intersect(ARE$fullsites, ARE$halfsites)))
+
+ERE <- read_excel(paste0(wd, "data/extra_files/Hs_allEREs.xls"))
+EREgene <- unique(ERE$`Hs Gene Name`)
+
 # Sets th epalette for a plot generated later on
 brewer_palette <- c(colorRampPalette(c("white", "#228B22"))(8), "#FF0000")
 custom_palette <- c(
@@ -197,14 +207,24 @@ for (pval_x in pval_ls) {
     #dev.off()
     
     # Hormone targets enrichment
-    hormones_df <- CreateHormonesDf(all_genes_filt, hormones_filt, groups_order)
-    hormones_pval <- HormoneEnrichment(hormones_df)
-    hmp_hormones <- HmpHormoneEnrichment(hormones_pval, groups_order)
-    png(paste0(plot_path, "Hormone_target_enrichment.png"), res = 300, units = 'in', height = 15, width = 10)
-    print(hmp_hormones)
+    #hormones_df <- CreateHormonesDf(all_genes_filt, hormones_filt, groups_order)
+    #hormones_pval <- HormoneEnrichment(hormones_df)
+    #hmp_hormones <- HmpHormoneEnrichment(hormones_pval, groups_order)
+    #png(paste0(plot_path, "Hormone_target_enrichment.png"), res = 300, units = 'in', height = 15, width = 10)
+    #print(hmp_hormones)
+    #dev.off()
+    
+    # ARE sites plots
+    ARE_plt <- ARE_ERE_plots(all_genes_filt, "ARE", ARE_sites, EREgene, groups_order)
+    png(paste0(plot_path, "ARE.png"), res = 300, units = 'in', height = 12, width = 10)
+    print(ARE_plt)
     dev.off()
     
-    
+    # ERE sites plots
+    ERE_plt <- ARE_ERE_plots(all_genes_filt, "ERE", ARE_sites, EREgene, groups_order)
+    png(paste0(plot_path, "ERE.png"), res = 300, units = 'in', height = 12, width = 10)
+    print(ERE_plt)
+    dev.off()
   }
 }
 
@@ -214,6 +234,8 @@ all_genes_filt <- do.call(rbind, presence_df_filt)
 all_genes_filt$ct <- gsub("\\..*", "", rownames(all_genes_filt))
 plot_path <- paste0(wd, "www/Plots/pval_1_FC_1/")
 
-png(paste0(plot_path, "Hormone_target_enrichment.png"), res = 300, units = 'in', height = 15, width = 10)
+print(test1)
+
+png(paste0(plot_path, "test.png"), res = 300, units = 'in', height = 12, width = 10)
 print(test1)
 dev.off()
