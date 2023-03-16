@@ -21,6 +21,8 @@ source("custom_scripts/About.R")
 source("custom_scripts/Source.R")
 source("custom_scripts/DsInfo.R")
 source("custom_scripts/DEGs.R")
+source("custom_scripts/GRN.R")
+
 
 ############################################################################################
 
@@ -41,6 +43,7 @@ ui <- dashboardPage(
     menuItem("Summary", tabName = "summary", icon = icon("dashboard")),
     menuItem("Datasets information", tabName = "ds_info", icon = icon("folder-open", lib="glyphicon")),
     menuItem("Differentially Expressed Genes Analysis", tabName = "degs", icon = icon("stats", lib="glyphicon")),
+    menuItem("Gene Regulatory Network Analysis", tabName = "grn", icon = icon("stats", lib="glyphicon")),
     menuItem("Open source code", tabName = "source_code", icon = icon("cog", lib="glyphicon"))
   )),
   
@@ -59,6 +62,11 @@ ui <- dashboardPage(
         tabItem(tabName = "degs",
                 h2("Differentially Expressed Genes Analysis (DEGs)"),
                 DEGsUI("DEGs")
+        ),
+        
+        tabItem(tabName = "grn",
+                h2("Gene Regulatory Network Analysis (GRN)"),
+                GRNUI("GRN")
         ),
         
         tabItem(tabName = "source_code",
@@ -80,6 +88,7 @@ server <- function(input, output, session) {
   
   DEGsServer("DEGs")
   
+  GRNServer("GRN")
   }
 
 

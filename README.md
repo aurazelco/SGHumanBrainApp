@@ -28,6 +28,7 @@ Brief description of the custom scripts:
 - [Generate_output_files_func.R Source.R](custom_scripts/Generate_output_files_func.R): custom functions, sourced in Generate_output_files.R
 - [About.R](custom_scripts/About.R): "Summary" tab user interface and server code
 - [DEGs.R](custom_scripts/DEGs.R): "Differentially expressed genes (DEGs)" tab user interface and server code
+- [GRN.R](custom_scripts/GRN.R): Gene Regulatory Networks (GRN)" tab user interface and server code
 - [DsInfo.R](custom_scripts/DsInfo.R): "Dataset information" tab user interface and server code
 - [Source.R](custom_scripts/Source.R): "Source" tab user interface and server code
 
