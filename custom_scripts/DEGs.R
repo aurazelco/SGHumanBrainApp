@@ -1,9 +1,13 @@
 library(shiny)
 library(shinydashboard)
-#library(zip)
+library(stringr)
+library(shinyjs)
+
+linebreaks <- function(n){HTML(strrep(br(), n))}
 
 DEGsUI <- function(id, label = "degs"){
   fluidPage(
+    shinyjs::useShinyjs(),
     
     fluidRow(
       br(),
@@ -14,29 +18,38 @@ DEGsUI <- function(id, label = "degs"){
              selectInput(NS(id,"pval"), 
                           p("Adjusted P-value threshold"), 
                           choices = list("NS"=1, "0.05"=0.05, "0.01"=0.01, "0.001"=0.001), 
-                          selected = 0.05)),
+                          selected = 0.05),
+             br(),
+             textOutput(NS(id,"selected_pval"))),
+      
       column(4, 
              selectInput(NS(id,"FC"), 
                           p("FC threshold"), 
                          choices = list("NS"=1, "1.2"=1.2, "1.5"=1.5, "2"=2), 
-                         selected = 1.2)),
+                         selected = 1.2),
+             br(),
+             textOutput(NS(id,"selected_FC"))),
+      
       column(4, 
              p("Thresholds Help"),
              helpText("Note: in the options on the left, NS stands for non-significant;",
                       "therefore, the DEGs will not be filtered for either adjusted p-value",
                       "or fold change"))
     ),
-    fluidRow(column(4, textOutput(NS(id,"selected_pval"))),
-             column(4, textOutput(NS(id,"selected_FC")))
+    linebreaks(4),
+    fluidRow(
+      column(3,
+             checkboxGroupInput(NS(id, "zips"), "Files to be downloaded as ZIP:",
+                                choices = c("Plots"="plots",
+                                            "Unfiltered DEGs" = "unfiltered DEGs",
+                                            "Filtered DEGs" = "filtered DEGs"))),
+      
+      column(5, downloadButton(NS(id,'save_zip'), 'Download selected files as a ZIP folder')),
+      column(6, 
+             helpText("Please note that the few moments may be required to download the files, ",
+                      "especially if all three options are chosen"))
     ),
-    br(),
-    p("download CSV files of filtered DEGs?", style = "color:red"),
-    br(),
-    p("Please wait few moments for all graphs to be generated."),
-    br(),
-    downloadButton(NS(id,'save_all_plots'), 'Download all plots as a ZIP folder'),
-    br(),
-    br(),
+    linebreaks(4),
     fluidRow(
          column(6,
                 box( height = 1300, width = 450,
@@ -49,34 +62,32 @@ DEGsUI <- function(id, label = "degs"){
                 imageOutput(NS(id,"chr_fraction"))),
                 downloadButton(NS(id,'save_chr_fraction_plot'), 'Download plot as PNG'))
     ),
-    br(),
-    br(),
-    box( height = 900, width = 1200,
-        strong('Top 20 most differentially present genes'),
-        imageOutput(NS(id,"mostdiffgenes"))),
-    column(3,
-           downloadButton(NS(id,'save_mostdiffgenes_plot'), 'Download plot as PNG')
-           ),
-    br(),
-    br(),
-    box( height = 900, width = 1200,
-        strong('Mitochondrial genes'),
-        imageOutput(NS(id,"MTgenes"))
-        ),
-    column(3,
-           downloadButton(NS(id,'save_MTgenes_plot'), 'Download plot as PNG')
+    linebreaks(2),
+    fluidRow(
+      tabBox(width = 18,
+             height = 1000,
+             title = "Presence heatmaps of specific genes of interest",
+             id = "Ind_Hmps",
+             tabPanel("Top 20 most differentially present genes",
+                      imageOutput(NS(id,"mostdiffgenes")),
+                      linebreaks(20),
+                      downloadButton(NS(id,'save_mostdiffgenes_plot'), 'Download plot as PNG')
+              ),
+             
+             tabPanel("Mitochondrial genes",
+                      imageOutput(NS(id,"MTgenes")),
+                      linebreaks(20),
+                      downloadButton(NS(id,'save_MTgenes_plot'), 'Download plot as PNG')
+              ),
+             
+             tabPanel('X-escaping genes',
+                      imageOutput(NS(id,"Xescapinggenes")),
+                      linebreaks(20),
+                      downloadButton(NS(id,'save_Xescapinggenes_plot'), 'Download plot as PNG')
+              )
+      )
     ),
-    br(),
-    br(),
-    box( height = 900, width = 1200,
-        strong('X-escaping genes'),
-        imageOutput(NS(id,"Xescapinggenes"))
-    ),
-    column(3,
-           downloadButton(NS(id,'save_Xescapinggenes_plot'), 'Download plot as PNG')
-    ),
-    br(),
-    br(),
+    linebreaks(2),
     box( height = 900, width = 1200,
          strong('Percentage of cell type markers from McKenzie et al. 2018'),
          imageOutput(NS(id,"McKenzie"))
@@ -84,8 +95,7 @@ DEGsUI <- function(id, label = "degs"){
     column(3,
            downloadButton(NS(id,'save_McKenzie_plot'), 'Download plot as PNG')
     ),
-    br(),
-    br(),
+    linebreaks(2),
     box( height = 900, width = 1200,
          strong("Presence heatmaps of disease markers from Chlamydas et al. 2022"),
          imageOutput(NS(id,"Chlamydas"))
@@ -93,8 +103,7 @@ DEGsUI <- function(id, label = "degs"){
     column(3,
            downloadButton(NS(id,'save_Chlamydas_plot'), 'Download plot as PNG')
     ),
-    br(),
-    br(),
+    linebreaks(2),
     box( height = 1300, width = 900,
          strong("Hormone targets enrichment from Jadhav et al. 2022"),
          imageOutput(NS(id,"Hormones"))
@@ -102,8 +111,7 @@ DEGsUI <- function(id, label = "degs"){
     column(3,
            downloadButton(NS(id,'save_Hormones_plot'), 'Download plot as PNG')
     ),
-    br(),
-    br(),
+    linebreaks(2),
     fluidRow(
       column(6,
              box( height = 900, width = 500,
@@ -116,8 +124,7 @@ DEGsUI <- function(id, label = "degs"){
                   imageOutput(NS(id,"ERE"))),
              downloadButton(NS(id,'save_ERE_plot'), 'Download plot as PNG'))
     ),
-    br(),
-    br(),
+    linebreaks(2)
   )
 }
 
@@ -133,16 +140,35 @@ DEGsServer <- function(id) {
       paste0("You have selected this FC threshold: ", input$FC)
     })
     
-    
-    filt_DEGs <- reactive({
-      filt_files_path <-paste0("data/Filtered_DEGs/pval_", 
-                                      str_replace(input$pval, "\\.",  ","), 
-                                      "_FC_", 
-                                      str_replace(input$FC, "\\.",  ","), "/")
-      filt_DEGs <- list.files(filt_files_path, "*.csv", recursive = T)
-      return(filt_DEGs)
+    observe({
+      shinyjs::toggleState("save_zip", condition = !is.null(input$zips))
     })
-    
+ 
+    output$save_zip <- downloadHandler(
+      filename = paste0("HumanBrainSexSingleCell_download.zip"),
+      contentType = "application/zip",
+      content = function(file){
+        
+        plt_dir <- paste0("www/Plots/pval_", str_replace(input$pval, "\\.",  ","), "_FC_", str_replace(input$FC, "\\.",  ","))
+        plt_files <- list.dirs(plt_dir, full.names = T, recursive = T)
+        
+        unfilt_DEGs_dir <- "data/Unfiltered_DEGs"
+        unfilt_files <- list.dirs(unfilt_DEGs_dir, full.names = T, recursive = T)
+        
+        filt_DEGs_dir <- paste0("data/Filtered_DEGs/pval_", str_replace(input$pval, "\\.",  ","), "_FC_", str_replace(input$FC, "\\.",  ","))
+        filt_files <- list.dirs(filt_DEGs_dir, full.names = T, recursive = T)
+        
+        files_ls <- list("plots"=plt_files,
+                         "unfiltered DEGs"=unfilt_files,
+                         "filtered DEGs"=filt_files)
+        
+        files <- unlist(files_ls[names(files_ls) %in% input$zips], use.names = F)
+
+        #create the zip file
+        zip(file, files)
+        
+      }
+    )
     
     output$num_degs_plot <- renderImage({
       filename <- normalizePath(file.path(paste0("www/Plots/pval_", 
@@ -202,7 +228,7 @@ DEGsServer <- function(id) {
       list(src = filename, height = 800, width = 1400)
     }, deleteFile = FALSE)
     
-    output$save_mostdiffgenes_plot <- downloadHandler(
+    output$save_MTgenes_plot <- downloadHandler(
       filename = paste0("MT_genes_pval_", str_replace(input$pval, "\\.",  ","), "_FC_", str_replace(input$FC, "\\.",  ","), ".png"),
       contentType = "image/png",
       content = function(file) {
@@ -315,36 +341,6 @@ DEGsServer <- function(id) {
       }
     )  
 
-    
-    output$save_all_plots <- downloadHandler(
-      filename = paste0("All_plots_pval_", str_replace(input$pval, "\\.",  ","), "_FC_", str_replace(input$FC, "\\.",  ","), ".zip"),
-        contentType = "application/zip",
-      content = function(file){
-        plot_ls <- c(
-          "Number_of_DEGs.png",
-          "Chr_fractions.png",
-          "top_20_most_diff_genes.png",
-          "MT_genes.png",
-          "X_escaping_genes.png",
-          "McKenzie_perc.png",
-          "Chlamydas_hmp.png",
-          "Hormone_target_enrichment.png",
-          "ARE.png",
-          "ERE.png"
-        )
-        files <- NULL
-        for (i in plot_ls){
-          files <- c(paste0("www/Plots/pval_", 
-                    str_replace(input$pval, "\\.",  ","), "_FC_", str_replace(input$FC, "\\.",  ","), 
-                    "/", i), files)
-        }
-        #create the zip file
-        zip(file, files)
-      }
-    )
-    
-    
-  
   
   })
   
