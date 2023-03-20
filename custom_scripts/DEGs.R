@@ -51,16 +51,34 @@ DEGsUI <- function(id, label = "degs"){
     ),
     linebreaks(4),
     fluidRow(
-         column(6,
-                box( height = 1300, width = 450,
-                strong('The number of sex-biased DEGs'),
-                imageOutput(NS(id,"num_degs_plot"))),
-                downloadButton(NS(id,'save_num_degs_plot'), 'Download plot as PNG')),
-         column(6,
-                box( height = 1300, width = 450,
-                strong('Shared DEGs among datasets, colored by chromosome annotation'),
-                imageOutput(NS(id,"chr_fraction"))),
-                downloadButton(NS(id,'save_chr_fraction_plot'), 'Download plot as PNG'))
+      tabBox(width = 18,
+             height = 1400,
+             title = "'OVerview pof sex-biased DEGs'",
+             id = "Overview_DEGs",
+             tabPanel("The number of sex-biased DEGs",
+                      p("Below the number of sex-biased DEGs in each group for each sex and cell type can be found. "),
+                      linebreaks(2),
+                      imageOutput(NS(id,"num_degs_plot")),
+                      linebreaks(45),
+                      downloadButton(NS(id,'save_num_degs_plot'), 'Download plot as PNG'),
+             ),
+             
+             tabPanel("Shared DEGs among datasets, colored by chromosome annotation",
+                      p("Below the fractions of which chromosome (Autosome, X or Y) the sex-biased DEGs belong to, ordered by how many groups share the DEGs. The fractions are in logaritmic scale to enhance the lower fractions. "),
+                      linebreaks(2),
+                      imageOutput(NS(id,"chr_fraction")),
+                      linebreaks(45),
+                      downloadButton(NS(id,'save_chr_fraction_plot'), 'Download plot as PNG')
+             ),
+             
+             tabPanel('Sex-biased gene locations',
+                      p("In the plot, the frequency of cellular location is indicated by the size, while the color represents the cellular compartment. "),
+                      linebreaks(2),
+                      imageOutput(NS(id,"GeneLocation")),
+                      linebreaks(45),
+                      downloadButton(NS(id,'save_GeneLocation_plot'), 'Download plot as PNG')
+             )
+      )
     ),
     linebreaks(2),
     fluidRow(
@@ -201,6 +219,23 @@ DEGsServer <- function(id) {
         file.copy(normalizePath(file.path(paste0("www/Plots/pval_", 
                                                  str_replace(input$pval, "\\.",  ","), "_FC_", str_replace(input$FC, "\\.",  ","), 
                                                  "/Chr_fractions.png"))), file)
+      }
+    )  
+    
+    output$GeneLocation <- renderImage({
+      filename <- normalizePath(file.path(paste0("www/Plots/pval_", 
+                                                 str_replace(input$pval, "\\.",  ","), "_FC_", str_replace(input$FC, "\\.",  ","), 
+                                                 "/Location.png")))
+      list(src = filename, height = 1200, width = 750)
+    }, deleteFile = FALSE)
+    
+    output$save_GeneLocation_plot <- downloadHandler(
+      filename = paste0("Location_pval_", str_replace(input$pval, "\\.",  ","), "_FC_", str_replace(input$FC, "\\.",  ","), ".png"),
+      contentType = "image/png",
+      content = function(file) {
+        file.copy(normalizePath(file.path(paste0("www/Plots/pval_", 
+                                                 str_replace(input$pval, "\\.",  ","), "_FC_", str_replace(input$FC, "\\.",  ","), 
+                                                 "/Location.png"))), file)
       }
     )  
     

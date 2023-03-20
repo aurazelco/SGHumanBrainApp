@@ -127,7 +127,7 @@ ARE_sites <- list("full" = unique(setdiff(ARE$fullsites, ARE$halfsites)),
 ERE <- read_excel(paste0(wd, "data/extra_files/Hs_allEREs.xls"))
 EREgene <- unique(ERE$`Hs Gene Name`)
 
-# Sets th epalette for a plot generated later on
+# Sets the palette for a plot generated later on
 brewer_palette <- c(colorRampPalette(c("white", "#228B22"))(8), "#FF0000")
 custom_palette <- c(
   "Velmeshev_2nd_trimester"=brewer_palette[1],           
@@ -144,6 +144,8 @@ custom_palette <- c(
   "GSE174367_Alzheimer's disease"=brewer_palette[9],
   "PRJNA544731_Multiple Sclerosis"=brewer_palette[9] 
 )
+
+location_df <- read_xlsx(paste0(wd, "data/extra_files/Thul_2017_sm_table_s6.xlsx" ))
 
 
 ######################### Plots
@@ -173,6 +175,12 @@ for (pval_x in pval_ls) {
     #faceted_chr_fraction <- PlotChrFraction(gene_counts_filt)
     #png(paste0(plot_path, "Chr_fractions.png"), res = 300, units = 'in', height = 22, width = 15)
     #print(faceted_chr_fraction)
+    #dev.off()
+    
+    # Sex-biased gene location counts
+    #location_plt <- ExtractLocation(presence_df_filt, location_df, groups_order)
+    #png(paste0(plot_path, "Location.png"), res = 300, units = 'in', height = 20, width = 12)
+    #print(location_plt)
     #dev.off()
     
     # Top 20 most different genes - presence heatmap
@@ -215,16 +223,17 @@ for (pval_x in pval_ls) {
     #dev.off()
     
     # ARE sites plots
-    ARE_plt <- ARE_ERE_plots(all_genes_filt, "ARE", ARE_sites, EREgene, groups_order)
-    png(paste0(plot_path, "ARE.png"), res = 300, units = 'in', height = 12, width = 10)
-    print(ARE_plt)
-    dev.off()
+    #ARE_plt <- ARE_ERE_plots(all_genes_filt, "ARE", ARE_sites, EREgene, groups_order)
+    #png(paste0(plot_path, "ARE.png"), res = 300, units = 'in', height = 12, width = 10)
+    #print(ARE_plt)
+    #dev.off()
     
     # ERE sites plots
-    ERE_plt <- ARE_ERE_plots(all_genes_filt, "ERE", ARE_sites, EREgene, groups_order)
-    png(paste0(plot_path, "ERE.png"), res = 300, units = 'in', height = 12, width = 10)
-    print(ERE_plt)
-    dev.off()
+    #ERE_plt <- ARE_ERE_plots(all_genes_filt, "ERE", ARE_sites, EREgene, groups_order)
+    #png(paste0(plot_path, "ERE.png"), res = 300, units = 'in', height = 12, width = 10)
+    #print(ERE_plt)
+    #dev.off()
+    
   }
 }
 
@@ -234,8 +243,8 @@ all_genes_filt <- do.call(rbind, presence_df_filt)
 all_genes_filt$ct <- gsub("\\..*", "", rownames(all_genes_filt))
 plot_path <- paste0(wd, "www/Plots/pval_1_FC_1/")
 
-print(test1)
+test1 <- ExtractLocation(presence_df_filt, location_df, groups_order)
 
-png(paste0(plot_path, "test.png"), res = 300, units = 'in', height = 12, width = 10)
+png(paste0(plot_path, "test.png"), res = 300, units = 'in', height = 20, width = 12)
 print(test1)
 dev.off()

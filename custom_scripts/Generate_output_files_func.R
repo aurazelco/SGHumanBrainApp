@@ -4,6 +4,7 @@ library(biomaRt) # to query to which chromosome the shared genes belong to
 library(scales) # to set the palette to be used in the PlotDEGsOverlap function
 library(stringr)  # to modify and harmonize names
 library(RColorBrewer)  # to set a palette for the number of DEGs palette
+library(Polychrome) # to set a palette for the gene locations palette
 library(ggplot2) # to plot
 library(tidyr) # to clean and re-organize dfs
 library(rjson) # to import the json files containing the genes associated with the corresponding hormone
@@ -913,7 +914,7 @@ PlotFacetedARE <- function(ARE_perc, groups_ordered) {
 
 # 37. Plot ERE results faceted
   # Input: ERE df, the order of the groups
-  # Return: nothing, saves plot instead
+  # Return: plot
 
 PlotFacetedERE <- function(ERE_perc, groups_ordered) {
   ERE_perc$groups <- factor(ERE_perc$groups, groups_ordered)
@@ -942,9 +943,9 @@ PlotFacetedERE <- function(ERE_perc, groups_ordered) {
 }
 
 
-# 38. MAIN
-  # Input:
-  # Return:
+# 38. Generate ARE and ERE plots
+  # Input: the presence df list, which analysis to do, the references for ARE and ERE, the order of the groups
+  # Return: faceted bar plot of ARE/ERE sites
 
 ARE_ERE_plots <- function(sex_dfs, which_re, ARE_ls, ERE_gene, groups_ordered) {
   sex_dfs <- sex_dfs[which(sex_dfs$presence=="Yes"), c(1,2,3,5)]
@@ -958,4 +959,68 @@ ARE_ERE_plots <- function(sex_dfs, which_re, ARE_ls, ERE_gene, groups_ordered) {
     re_plot <- PlotFacetedERE(ERE_perc, groups_ordered)
   }
   return(re_plot)
+}
+
+# 39. Calculates the number of sex-biased DEGs in each cellular location
+  # Input: list of presence dfs, one per each ct, gene location reference
+  # Return: location count df
+
+ExtractLocation <- function(ct_df_list, loc_ref, groups_ordered, features="no") {
+  ids <- vector()
+  count_df <- list()
+  for (ct in names(ct_df_list)) {
+    for (group in unique(ct_df_list[[ct]]$groups)) {
+      for (sex in c("F", "M")) {
+        if (features[1]=="no") {
+          genes <- unique(ct_df_list[[ct]][which(ct_df_list[[ct]]$sex==sex & ct_df_list[[ct]]$groups==group & ct_df_list[[ct]]$presence=="Yes"), "gene_id"])
+        } else {
+          genes <- unique(ct_df_list[[ct]][which(ct_df_list[[ct]]$sex==sex & ct_df_list[[ct]]$groups==group & ct_df_list[[ct]]$presence=="Yes"), "gene_id"])
+          genes <- genes[which(genes %in% features)]
+        }
+        sub_loc <- loc_ref[which(loc_ref$Gene %in% genes & loc_ref$Reliability!="Uncertain"), ]
+        sub_loc_uncertain <- loc_ref[which(loc_ref$Gene %in% genes & loc_ref$Reliability=="Uncertain"), ]
+        counts <- c(colSums(sub_loc[,4:32]), "Uncertain"=sum(colSums(sub_loc_uncertain[,4:32])))
+        ids <- c(ids, paste(ct, group, sex, sep="/"))
+        count_df <- append(count_df, list(counts))
+      }
+    }
+  }
+  count_df <- as.data.frame(do.call(rbind, count_df))
+  count_df <- cbind(ids, count_df)
+  count_df <- melt(count_df, value.name = "loc_count")
+  names(count_df)[names(count_df) == 'variable'] <- 'locations'
+  count_df <- separate(count_df, ids, into=c("ct", "groups", "sex"), remove = T, sep="/")
+  count_df$locations <- as.character(count_df$locations)
+  count_df$groups <- factor(count_df$groups, rev(groups_ordered[which(groups_ordered %in% count_df$groups)]))
+  loc_plt <- PlotGenesLocation(count_df)
+  return(loc_plt)
+}
+
+# 40. Generate dot plot for cellular location of genes
+  # Input: df with location count
+  # Return: plot
+
+PlotGenesLocation <- function(count_df) {
+  custom_pal <- createPalette(30, c("#010101", "#ff0000"), M=1000)
+  names(custom_pal) <- c("Uncertain", unique(count_df$locations)[1:29])
+  loc_plot <- 
+  ggplot(count_df, aes(locations, groups, size=loc_count, color=locations)) +
+    geom_point() +
+    facet_grid(ct ~ sex, scales = "free", space = "free") +
+    scale_colour_manual(values=custom_pal) +
+    labs(x="", y="Groups", size="Genes found in location", color="Cellular locations") +
+    theme(panel.grid.major = element_blank(), 
+          panel.grid.minor = element_blank(),
+          panel.background = element_blank(), 
+          strip.text.y = element_text(size=12, face="bold", colour = "black", angle = 0),
+          strip.text.x = element_text(size=12, face="bold", colour = "black"),
+          axis.line = element_line(colour = "black"),
+          axis.title.x = element_text(size=12, face="bold", colour = "black"),
+          axis.text.x = element_text(size=8, colour = "black", vjust = 0.7, hjust=0.5, angle = 90),
+          axis.ticks.x=element_blank(),
+          axis.title.y = element_text(size=12, face="bold", colour = "black"),
+          legend.position = "bottom", 
+          legend.box = "vertical",
+          legend.title = element_text(size=12, face="bold", colour = "black"))
+  return(loc_plot)
 }
