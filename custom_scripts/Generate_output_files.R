@@ -57,6 +57,22 @@ groups_order <- c("Velmeshev_2nd_trimester",
                   "PRJNA544731_Multiple Sclerosis" 
 )
 
+cts_order <- c(
+  "Excitatory neurons",  
+  "Interneurons",        
+  "Astrocytes",          
+  "Microglia" ,          
+  "Oligodendrocytes",    
+  "OPCs",   
+  "Endothelial cells", 
+  "Vascular cells",      
+  "Dorsal progenitors",  
+  "Ventral progenitors",
+  "Unknown"   
+)
+
+cts_sex_order <- paste(rep(cts_order, each=length(c("F", "M"))), c("F", "M"), sep = "/")
+
 # Imports original dex-biased DEGs
 all_degs <- ImportDatasets(paste0(wd, "data/Unfiltered_DEGs/"))
 
@@ -234,6 +250,30 @@ for (pval_x in pval_ls) {
     #print(ERE_plt)
     #dev.off()
     
+    # GO Biological Processes enrichment
+    #GOBP <- DBClusterProfiler(all_genes_filt[which(all_genes_filt$presence=="Yes"), ], "GO", "BP", gene_thresh = 100, groups_ordered = groups_order, rotate_x_axis = T, adj_pval_thresh =  0.01, cts_sex_order)
+    #png(paste0(plot_path, "GO_BP.png"), res = 300, units = 'in', height = 30, width = 30)
+    #print(ggarrange(plotlist = GOBP, ncol = 4, nrow = 5))
+    #dev.off()
+    
+    # GO Cellular Component enrichment
+    GOCC <- DBClusterProfiler(all_genes_filt[which(all_genes_filt$presence=="Yes"), ], "GO", "CC", gene_thresh = 100, groups_ordered = groups_order, rotate_x_axis = T, adj_pval_thresh =  0.01, cts_sex_order)
+    png(paste0(plot_path, "GO_CC.png"), res = 300, units = 'in', height = 30, width = 30)
+    print(ggarrange(plotlist = GOCC, ncol = 4, nrow = 5))
+    dev.off()
+    
+    # GO Molecular Function enrichment
+    GOMF <- DBClusterProfiler(all_genes_filt[which(all_genes_filt$presence=="Yes"), ], "GO", "MF", gene_thresh = 100, groups_ordered = groups_order, rotate_x_axis = T, adj_pval_thresh =  0.01, cts_sex_order)
+    png(paste0(plot_path, "GO_MF.png"), res = 300, units = 'in', height = 30, width = 30)
+    print(ggarrange(plotlist = GOMF, ncol = 4, nrow = 5))
+    dev.off()
+    
+    # KEGG enrichment
+    #KEGG_res <- DBEnrichR(all_genes_filt[which(all_genes_filt$presence=="Yes"), ], "EnrichR",  "KEGG_2021_Human", groups_order, cts_sex_order)
+    #png(paste0(plot_path, "KEGG.png"), res = 300, units = 'in', height = 30, width = 30)
+    #print(ggarrange(plotlist = KEGG_res, ncol = 4, nrow = 5))
+    #dev.off()
+    
   }
 }
 
@@ -243,8 +283,4 @@ all_genes_filt <- do.call(rbind, presence_df_filt)
 all_genes_filt$ct <- gsub("\\..*", "", rownames(all_genes_filt))
 plot_path <- paste0(wd, "www/Plots/pval_1_FC_1/")
 
-test1 <- ExtractLocation(presence_df_filt, location_df, groups_order)
 
-png(paste0(plot_path, "test.png"), res = 300, units = 'in', height = 20, width = 12)
-print(test1)
-dev.off()

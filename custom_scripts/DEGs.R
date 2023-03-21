@@ -14,6 +14,7 @@ DEGsUI <- function(id, label = "degs"){
       p("Please select the threshold for the p-value and fold change (FC). The FC threshold will be then transformed to log2 values."),
       p("Only the DEGs which have both the p-value and the FC less than the respective thresholds will be considered in the analyses below."),
       br(),
+      h4("Parameter thresholds:"),
       column(4, 
              selectInput(NS(id,"pval"), 
                           p("Adjusted P-value threshold"), 
@@ -37,6 +38,7 @@ DEGsUI <- function(id, label = "degs"){
                       "or fold change"))
     ),
     linebreaks(4),
+    h4("Download files as ZIP folder?"),
     fluidRow(
       column(3,
              checkboxGroupInput(NS(id, "zips"), "Files to be downloaded as ZIP:",
@@ -49,13 +51,15 @@ DEGsUI <- function(id, label = "degs"){
              helpText("Please note that the few moments may be required to download the files, ",
                       "especially if all three options are chosen"))
     ),
-    linebreaks(4),
+    linebreaks(5),
+    h4("Output plots"),
+    linebreaks(2),
     fluidRow(
       tabBox(width = 18,
              height = 1400,
-             title = "'OVerview pof sex-biased DEGs'",
+             title = "Overview pof sex-biased DEGs",
              id = "Overview_DEGs",
-             tabPanel("The number of sex-biased DEGs",
+             tabPanel(strong("The number of sex-biased DEGs"),
                       p("Below the number of sex-biased DEGs in each group for each sex and cell type can be found. "),
                       linebreaks(2),
                       imageOutput(NS(id,"num_degs_plot")),
@@ -63,7 +67,7 @@ DEGsUI <- function(id, label = "degs"){
                       downloadButton(NS(id,'save_num_degs_plot'), 'Download plot as PNG'),
              ),
              
-             tabPanel("Shared DEGs among datasets, colored by chromosome annotation",
+             tabPanel(strong("Shared DEGs among datasets, colored by chromosome annotation"),
                       p("Below the fractions of which chromosome (Autosome, X or Y) the sex-biased DEGs belong to, ordered by how many groups share the DEGs. The fractions are in logaritmic scale to enhance the lower fractions. "),
                       linebreaks(2),
                       imageOutput(NS(id,"chr_fraction")),
@@ -71,7 +75,7 @@ DEGsUI <- function(id, label = "degs"){
                       downloadButton(NS(id,'save_chr_fraction_plot'), 'Download plot as PNG')
              ),
              
-             tabPanel('Sex-biased gene locations',
+             tabPanel(strong('Sex-biased gene locations'),
                       p("In the plot, the frequency of cellular location is indicated by the size, while the color represents the cellular compartment. "),
                       linebreaks(2),
                       imageOutput(NS(id,"GeneLocation")),
@@ -80,25 +84,25 @@ DEGsUI <- function(id, label = "degs"){
              )
       )
     ),
-    linebreaks(2),
+    linebreaks(5),
     fluidRow(
       tabBox(width = 18,
              height = 1000,
              title = "Presence heatmaps of specific genes of interest",
              id = "Ind_Hmps",
-             tabPanel("Top 20 most differentially present genes",
+             tabPanel(strong("Top 20 most differentially present genes"),
                       imageOutput(NS(id,"mostdiffgenes")),
                       linebreaks(20),
                       downloadButton(NS(id,'save_mostdiffgenes_plot'), 'Download plot as PNG')
               ),
              
-             tabPanel("Mitochondrial genes",
+             tabPanel(strong("Mitochondrial genes"),
                       imageOutput(NS(id,"MTgenes")),
                       linebreaks(20),
                       downloadButton(NS(id,'save_MTgenes_plot'), 'Download plot as PNG')
               ),
              
-             tabPanel('X-escaping genes',
+             tabPanel(strong('X-escaping genes'),
                       imageOutput(NS(id,"Xescapinggenes")),
                       linebreaks(20),
                       downloadButton(NS(id,'save_Xescapinggenes_plot'), 'Download plot as PNG')
@@ -142,7 +146,37 @@ DEGsUI <- function(id, label = "degs"){
                   imageOutput(NS(id,"ERE"))),
              downloadButton(NS(id,'save_ERE_plot'), 'Download plot as PNG'))
     ),
-    linebreaks(2)
+    linebreaks(5),
+    fluidRow(
+      tabBox(width = 18,
+             height = 2000,
+             title = "Functional Enrichment",
+             id = "Functional_enrichment",
+             tabPanel(strong("Gene Ontology (GO) - Biological Processes"),
+                      imageOutput(NS(id,"GOBP")),
+                      linebreaks(70),
+                      downloadButton(NS(id,'save_GOBP_plot'), 'Download plot as PNG')
+             ),
+             
+             tabPanel(strong("Gene Ontology (GO) - Cellular Components"),
+                      imageOutput(NS(id,"GOCC")),
+                      linebreaks(70),
+                      downloadButton(NS(id,'save_GOCC_plot'), 'Download plot as PNG')
+             ),
+             
+             tabPanel(strong("Gene Ontology (GO) - Molecular Functions"),
+                      imageOutput(NS(id,"GOMF")),
+                      linebreaks(70),
+                      downloadButton(NS(id,'save_GOMF_plot'), 'Download plot as PNG')
+             ),
+             
+             tabPanel(strong("Kyoto Encyclopedia of Genes and Genomes (KEGG) - pathway enrichment"),
+                      imageOutput(NS(id,"KEGG")),
+                      linebreaks(70),
+                      downloadButton(NS(id,'save_KEGG_plot'), 'Download plot as PNG')
+             )
+      )
+    ),
   )
 }
 
@@ -375,7 +409,75 @@ DEGsServer <- function(id) {
                                                  "/ERE.png"))), file)
       }
     )  
-
+    
+    output$GOBP <- renderImage({
+      filename <- normalizePath(file.path(paste0("www/Plots/pval_", 
+                                                 str_replace(input$pval, "\\.",  ","), "_FC_", str_replace(input$FC, "\\.",  ","), 
+                                                 "/GO_BP.png")))
+      list(src = filename, height = 1600, width = 1400)
+    }, deleteFile = FALSE)
+    
+    output$save_GOBP_plot <- downloadHandler(
+      filename = paste0("GO_BP_sites_pval_", str_replace(input$pval, "\\.",  ","), "_FC_", str_replace(input$FC, "\\.",  ","), ".png"),
+      contentType = "image/png",
+      content = function(file) {
+        file.copy(normalizePath(file.path(paste0("www/Plots/pval_", 
+                                                 str_replace(input$pval, "\\.",  ","), "_FC_", str_replace(input$FC, "\\.",  ","), 
+                                                 "/GO_BP.png"))), file)
+      }
+    )  
+    
+    output$GOCC <- renderImage({
+      filename <- normalizePath(file.path(paste0("www/Plots/pval_", 
+                                                 str_replace(input$pval, "\\.",  ","), "_FC_", str_replace(input$FC, "\\.",  ","), 
+                                                 "/GO_CC.png")))
+      list(src = filename, height = 1600, width = 1400)
+    }, deleteFile = FALSE)
+    
+    output$save_GOCC_plot <- downloadHandler(
+      filename = paste0("GO_CC_sites_pval_", str_replace(input$pval, "\\.",  ","), "_FC_", str_replace(input$FC, "\\.",  ","), ".png"),
+      contentType = "image/png",
+      content = function(file) {
+        file.copy(normalizePath(file.path(paste0("www/Plots/pval_", 
+                                                 str_replace(input$pval, "\\.",  ","), "_FC_", str_replace(input$FC, "\\.",  ","), 
+                                                 "/GO_CC.png"))), file)
+      }
+    )  
+    
+    output$GOMF <- renderImage({
+      filename <- normalizePath(file.path(paste0("www/Plots/pval_", 
+                                                 str_replace(input$pval, "\\.",  ","), "_FC_", str_replace(input$FC, "\\.",  ","), 
+                                                 "/GO_MF.png")))
+      list(src = filename, height = 1600, width = 1400)
+    }, deleteFile = FALSE)
+    
+    output$save_GOMF_plot <- downloadHandler(
+      filename = paste0("GO_MF_sites_pval_", str_replace(input$pval, "\\.",  ","), "_FC_", str_replace(input$FC, "\\.",  ","), ".png"),
+      contentType = "image/png",
+      content = function(file) {
+        file.copy(normalizePath(file.path(paste0("www/Plots/pval_", 
+                                                 str_replace(input$pval, "\\.",  ","), "_FC_", str_replace(input$FC, "\\.",  ","), 
+                                                 "/GO_MF.png"))), file)
+      }
+    )  
+    
+    output$KEGG <- renderImage({
+      filename <- normalizePath(file.path(paste0("www/Plots/pval_", 
+                                                 str_replace(input$pval, "\\.",  ","), "_FC_", str_replace(input$FC, "\\.",  ","), 
+                                                 "/KEGG.png")))
+      list(src = filename, height = 1600, width = 1400)
+    }, deleteFile = FALSE)
+    
+    output$save_KEGG_plot <- downloadHandler(
+      filename = paste0("KEGG_sites_pval_", str_replace(input$pval, "\\.",  ","), "_FC_", str_replace(input$FC, "\\.",  ","), ".png"),
+      contentType = "image/png",
+      content = function(file) {
+        file.copy(normalizePath(file.path(paste0("www/Plots/pval_", 
+                                                 str_replace(input$pval, "\\.",  ","), "_FC_", str_replace(input$FC, "\\.",  ","), 
+                                                 "/KEGG.png"))), file)
+      }
+    )  
+    
   
   })
   

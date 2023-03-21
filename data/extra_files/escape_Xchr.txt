@@ -1,0 +1,21 @@
+From: Escape from X chromosome inactivation and female bias of autoimmune diseases
+-	Gene symbol	Gene nomenclature	Aliases for the gene	Reference numbers
+1	CD99	Cluster of differentiation 99	HBA71, MIC2, MIC2X, MIC2Y, MSK5X, Xg blood group	Wainer Katsir and Linial (2019)
+2	LAMP2	Lysosomal associated membrane protein 2	CD107b, LAMPB, LGP110, LGP-96, DND	Wainer Katsir and Linial (2019)
+3	USP27X	Ubiquitin specific peptidase 27 X-linked	Deubiquitinating enzyme 27, USP22L, USP27, Ubiquitin Carboxyl-Terminal Hydrolase 22-Like, Ubiquitin Carboxyl-Terminal Hydrolase 27, MRX105	Wainer Katsir and Linial (2019)
+4	XIAP	X-linked inhibitor of apoptosis	API3, BIRC4, IAP-3, ILP1, MIHA, XLP2, HIAP-3	Wainer Katsir and Linial (2019)
+5	DDX3X	DEAD-BOX helicase 3 X-linked	DBX, DDX14, DDX3, HLP2, CAP-Rf, MRX102	Wainer Katsir and Linial (2019)
+6	XIST	X inactive specific transcript	DXS1089, DXS399E, LINC00001, NCRNA00001, SXI1, swd66	Wainer Katsir and Linial (2019)
+7	DMD	Dystrophin	BMD, CMD3B, DXS142, DXS164, DXS206, DXS230, DXS239, DXS268, DXS269, DXS270, DXS272, MRX85	Wainer Katsir and Linial (2019)
+8	TMSB4X	Thymosin beta 4 X-linked	FX, PTMB4, TB4X, TMSB4	Wainer Katsir and Linial (2019)
+9	CSF2RA	Colony stimulating factor 2 receptor subunit alpha	CD116, CDw116, CSF2R, CSF2RAX, CSF2RAY, CSF2RX, CSF2RY, GM-CSF-R-alpha, GMCSFR, GMR, SMDP4	Wainer Katsir and Linial (2019)
+10	IL3RA	Interleukin 3 receptor subunit alpha	CD123, IL3R, IL3RAY, IL3RX, IL3RY, hIL-3Ra	Wainer Katsir and Linial (2019)
+11	PRKX	Protein KINASE X-linked	PKX1, EC 2.7.11.1, Protein Kinase PKX1	Wainer Katsir and Linial (2019)
+12	OTC	Ornithine carbamoyltransferase	OCT29D, OTCase	Wainer Katsir and Linial (2019)
+13	IRAK1	interleukin 1 receptor associated kinase 1	IRAK, pelle,	Odhams (2019)
+14	TLR7	toll-like receptor 7	TLR7-like	Odhams (2019)
+15	CXorf21	Chromosome X open reading frame 21	FLJ11577, Uncharacterized protein CXorf21	Odhams (2019)
+16	TMEM187	Transmembrane protein 187	CXorf12, DXS9878E, ITBA1, Protein ITBA1	Odhams (2019)
+17	CD40L	CD40 ligand	CD154, CD40L, HIGM1, IGM, IMD3, T-BAM, TNFSF5, TRAP, Gp39, HCD40L	Wang (2016)
+18	CXCR3	C-X-C motif chemokine receptor 3	CD182, CD183, CKR-L2, CMKAR3, GPR9, IP10-R, MigR	Wang (2016)
+
