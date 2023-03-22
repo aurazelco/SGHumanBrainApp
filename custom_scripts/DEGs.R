@@ -5,10 +5,10 @@ library(shinyjs)
 
 linebreaks <- function(n){HTML(strrep(br(), n))}
 
+
 DEGsUI <- function(id, label = "degs"){
   fluidPage(
     shinyjs::useShinyjs(),
-    
     fluidRow(
       br(),
       p("Please select the threshold for the p-value and fold change (FC). The FC threshold will be then transformed to log2 values."),
@@ -53,11 +53,21 @@ DEGsUI <- function(id, label = "degs"){
     ),
     linebreaks(5),
     h4("Output plots"),
+    p("Below you can find the following plots:"),
+    tags$ol(
+      tags$li("Overview of the sex-biased DEGs - number of DEGs, chromosome fractions of shared DEGs, sex-biased DEGs cellular locations"), 
+      tags$li("Presence heatmaps of specific genes of interest - top 20 most frequent sex-specific DEGs, mitochondrial genes and X-escaping genes"), 
+      tags$li("Percentage of known cell type markers"),
+      tags$li("Presence heatmaps of neuropsychiatric disease markers"), 
+      tags$li("Hormone targets enrichment"), 
+      tags$li("Percentage of androgen and estrogen response elements (ARE, ERE)"),
+      tags$li("Functional Enrichment - gene ontology (biological processes, cellular component, molecular function) and KEGG pathways")
+    ),
     linebreaks(2),
     fluidRow(
       tabBox(width = 18,
              height = 1400,
-             title = "Overview pof sex-biased DEGs",
+             title = "Overview of sex-biased DEGs",
              id = "Overview_DEGs",
              tabPanel(strong("The number of sex-biased DEGs"),
                       p("Below the number of sex-biased DEGs in each group for each sex and cell type can be found. "),
@@ -111,7 +121,7 @@ DEGsUI <- function(id, label = "degs"){
     ),
     linebreaks(2),
     box( height = 900, width = 1200,
-         strong('Percentage of cell type markers from McKenzie et al. 2018'),
+         strong('Percentage of known cell type markers from McKenzie et al. 2018'),
          imageOutput(NS(id,"McKenzie"))
     ),
     column(3,
@@ -119,7 +129,7 @@ DEGsUI <- function(id, label = "degs"){
     ),
     linebreaks(2),
     box( height = 900, width = 1200,
-         strong("Presence heatmaps of disease markers from Chlamydas et al. 2022"),
+         strong("Presence heatmaps of neuropsychiatric disease markers from Chlamydas et al. 2022"),
          imageOutput(NS(id,"Chlamydas"))
     ),
     column(3,
