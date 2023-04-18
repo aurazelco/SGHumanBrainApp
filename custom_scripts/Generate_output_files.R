@@ -162,6 +162,10 @@ custom_palette <- c(
 )
 
 location_df <- read_xlsx(paste0(wd, "data/extra_files/Thul_2017_sm_table_s6.xlsx" ))
+loc_counts <- c(colSums(location_df[which(location_df$Reliability!="Uncertain"), c(4:32)]),
+                "Uncertain"=sum(colSums(location_df[which(location_df$Reliability=="Uncertain"), c(4:32)])))
+
+tot_genes <- 20000
 
 
 ######################### Plots
@@ -194,10 +198,13 @@ for (pval_x in pval_ls) {
     #dev.off()
     
     # Sex-biased gene location counts
-    #location_plt <- ExtractLocation(presence_df_filt, location_df, groups_order)
-    #png(paste0(plot_path, "Location.png"), res = 300, units = 'in', height = 20, width = 12)
-    #print(location_plt)
-    #dev.off()
+    genes_loc <- ExtractLocation(presence_df_filt, location_df, groups_order)
+    enriched_loc <- HyperGeomLocation(genes_loc, tot_genes, loc_counts)
+    location_results <- merge(genes_loc, enriched_loc, by=c("groups", "ct", "sex", "locations"))
+    location_plt <- PlotEnrichedPvalues(location_results, groups_order, cts_order)
+    png(paste0(plot_path, "Location.png"), res = 300, units = 'in', height = 20, width = 15)
+    print(location_plt)
+    dev.off()
     
     # Top 20 most different genes - presence heatmap
     #mostdiff <- PlotTop20DiffGenes(all_genes_filt, groups_order)
@@ -257,16 +264,16 @@ for (pval_x in pval_ls) {
     #dev.off()
     
     # GO Cellular Component enrichment
-    GOCC <- DBClusterProfiler(all_genes_filt[which(all_genes_filt$presence=="Yes"), ], "GO", "CC", gene_thresh = 100, groups_ordered = groups_order, rotate_x_axis = T, adj_pval_thresh =  0.01, cts_sex_order)
-    png(paste0(plot_path, "GO_CC.png"), res = 300, units = 'in', height = 30, width = 30)
-    print(ggarrange(plotlist = GOCC, ncol = 4, nrow = 5))
-    dev.off()
+    #GOCC <- DBClusterProfiler(all_genes_filt[which(all_genes_filt$presence=="Yes"), ], "GO", "CC", gene_thresh = 100, groups_ordered = groups_order, rotate_x_axis = T, adj_pval_thresh =  0.01, cts_sex_order)
+    #png(paste0(plot_path, "GO_CC.png"), res = 300, units = 'in', height = 30, width = 30)
+    #print(ggarrange(plotlist = GOCC, ncol = 4, nrow = 5))
+    #dev.off()
     
     # GO Molecular Function enrichment
-    GOMF <- DBClusterProfiler(all_genes_filt[which(all_genes_filt$presence=="Yes"), ], "GO", "MF", gene_thresh = 100, groups_ordered = groups_order, rotate_x_axis = T, adj_pval_thresh =  0.01, cts_sex_order)
-    png(paste0(plot_path, "GO_MF.png"), res = 300, units = 'in', height = 30, width = 30)
-    print(ggarrange(plotlist = GOMF, ncol = 4, nrow = 5))
-    dev.off()
+    #GOMF <- DBClusterProfiler(all_genes_filt[which(all_genes_filt$presence=="Yes"), ], "GO", "MF", gene_thresh = 100, groups_ordered = groups_order, rotate_x_axis = T, adj_pval_thresh =  0.01, cts_sex_order)
+    #png(paste0(plot_path, "GO_MF.png"), res = 300, units = 'in', height = 30, width = 30)
+    #print(ggarrange(plotlist = GOMF, ncol = 4, nrow = 5))
+    #dev.off()
     
     # KEGG enrichment
     #KEGG_res <- DBEnrichR(all_genes_filt[which(all_genes_filt$presence=="Yes"), ], "EnrichR",  "KEGG_2021_Human", groups_order, cts_sex_order)
@@ -282,5 +289,4 @@ presence_df_filt <- CreateSexDf(filt_degs, unified_annotation)
 all_genes_filt <- do.call(rbind, presence_df_filt)
 all_genes_filt$ct <- gsub("\\..*", "", rownames(all_genes_filt))
 plot_path <- paste0(wd, "www/Plots/pval_1_FC_1/")
-
 

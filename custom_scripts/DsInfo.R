@@ -39,21 +39,21 @@ DsUI <- function(id, label = "ds_info"){
                       p("All datasets but one (Velmeshev 4-10 years) have more than 3 samples in both female and male groups. "),
                       p("The dashed line represent n=3, which we used a sminimum number of samples per each group and sex. "),
                       br(),
-                      img(src = "ds_info/num_samples.png", height="55%", width="55%", style="display: block; margin-left: auto; margin-right: auto;")
+                      img(src = "ds_info/num_samples.png", height="75%", width="75%", style="display: block; margin-left: auto; margin-right: auto;")
              ),
              
              tabPanel(strong("Number of cells in the sub-datasets, divided by sex"),
                       linebreaks(2),
                       p("Here the number of cells in each dataset is howed. The datasets are divided by helathy/disease. "),
                       br(),
-                      img(src = "ds_info/num_cells.png", height="40%", width="40%", style="display: block; margin-left: auto; margin-right: auto;")    
+                      img(src = "ds_info/num_cells.png", height="60%", width="60%", style="display: block; margin-left: auto; margin-right: auto;")    
              ),
              
              tabPanel(strong("Number of cells in the sub-datasets, divided by sex and cell type"),
                       linebreaks(2),
                       p("The dashed line corresponds to 100 cells, which was used as a threshold for determining which cell types to analyze. "),
                       br(),
-                      img(src = "ds_info/num_cells_per_ct.png", height="50%", width="50%", style="display: block; margin-left: auto; margin-right: auto;")
+                      img(src = "ds_info/num_cells_per_ct.png", height="60%", width="60%", style="display: block; margin-left: auto; margin-right: auto;")
              )
       )
     )

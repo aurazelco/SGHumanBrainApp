@@ -270,7 +270,7 @@ DEGsServer <- function(id) {
       filename <- normalizePath(file.path(paste0("www/Plots/pval_", 
                                                  str_replace(input$pval, "\\.",  ","), "_FC_", str_replace(input$FC, "\\.",  ","), 
                                                  "/Location.png")))
-      list(src = filename, height = 1200, width = 750)
+      list(src = filename, height = 1200, width = 900)
     }, deleteFile = FALSE)
     
     output$save_GeneLocation_plot <- downloadHandler(

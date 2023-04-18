@@ -977,6 +977,7 @@ ARE_ERE_plots <- function(sex_dfs, which_re, ARE_ls, ERE_gene, groups_ordered) {
 ExtractLocation <- function(ct_df_list, loc_ref, groups_ordered, features="no") {
   ids <- vector()
   count_df <- list()
+  num_genes <- vector()
   for (ct in names(ct_df_list)) {
     for (group in unique(ct_df_list[[ct]]$groups)) {
       for (sex in c("F", "M")) {
@@ -986,6 +987,7 @@ ExtractLocation <- function(ct_df_list, loc_ref, groups_ordered, features="no") 
           genes <- unique(ct_df_list[[ct]][which(ct_df_list[[ct]]$sex==sex & ct_df_list[[ct]]$groups==group & ct_df_list[[ct]]$presence=="Yes"), "gene_id"])
           genes <- genes[which(genes %in% features)]
         }
+        num_genes <- c(num_genes, length(genes))
         sub_loc <- loc_ref[which(loc_ref$Gene %in% genes & loc_ref$Reliability!="Uncertain"), ]
         sub_loc_uncertain <- loc_ref[which(loc_ref$Gene %in% genes & loc_ref$Reliability=="Uncertain"), ]
         counts <- c(colSums(sub_loc[,4:32]), "Uncertain"=sum(colSums(sub_loc_uncertain[,4:32])))
@@ -998,43 +1000,87 @@ ExtractLocation <- function(ct_df_list, loc_ref, groups_ordered, features="no") 
   count_df <- cbind(ids, count_df)
   count_df <- melt(count_df, value.name = "loc_count")
   names(count_df)[names(count_df) == 'variable'] <- 'locations'
+  num_df <- cbind(ids, num_genes)
+  count_df <- merge(count_df, num_df, by="ids")
   count_df <- separate(count_df, ids, into=c("ct", "groups", "sex"), remove = T, sep="/")
   count_df$locations <- as.character(count_df$locations)
+  count_df$num_genes <- as.numeric(count_df$num_genes)
   count_df$groups <- factor(count_df$groups, rev(groups_ordered[which(groups_ordered %in% count_df$groups)]))
-  loc_plt <- PlotGenesLocation(count_df)
-  return(loc_plt)
+  return(count_df)
 }
 
-# 40. Generate dot plot for cellular location of genes
-  # Input: df with location count
+
+# 40. Calculates hypergeometric distribution for each location
+  # Input: main directory where to save the files, count df, the background number of genes
+  # Return: df with p-values for each combination of group/ct/sex/chr
+
+HyperGeomLocation <- function(count_df, genes_tot, loc_ref) {
+  pvalues <- vector()
+  ids <- vector()
+  for (group_id in unique(count_df$groups)) {
+    for (ct_id in unique(count_df[which(count_df$groups==group_id), "ct"])) {
+      for (sex_id in c("F", "M")) {
+        for (loc_id in names(loc_ref)) {
+          pvalues <- c(pvalues, 
+                       phyper(
+                         count_df[which(count_df$sex==sex_id & count_df$locations==loc_id & count_df$groups==group_id & count_df$ct==ct_id), "loc_count"] - 1,
+                         count_df[which(count_df$sex==sex_id & count_df$locations==loc_id & count_df$groups==group_id & count_df$ct==ct_id), "num_genes"],
+                         genes_tot - loc_ref[[loc_id]],
+                         loc_ref[[loc_id]],
+                         lower.tail= FALSE
+                       ))
+          ids <- c(ids, paste(group_id, ct_id, sex_id, loc_id, sep = "--"))
+        }
+      }
+    }
+  }
+  loc_hypergeom <- data.frame(ids, pvalues)
+  loc_hypergeom <- separate(loc_hypergeom, ids, into = c("groups", "ct", "sex", "locations"), sep = "--")
+  loc_hypergeom$pval_sign <- rep(NA, nrow(loc_hypergeom))
+  loc_hypergeom[which(loc_hypergeom$pvalues>0.05), "pval_sign"] <- "NS"
+  loc_hypergeom[which(loc_hypergeom$pvalues<=0.05 & loc_hypergeom$pvalues>0.01), "pval_sign"] <- "*"
+  loc_hypergeom[which(loc_hypergeom$pvalues<=0.01 & loc_hypergeom$pvalues>0.001), "pval_sign"] <- "**"
+  loc_hypergeom[which(loc_hypergeom$pvalues<=0.001 & loc_hypergeom$pvalues>0.0001), "pval_sign"] <- "***"
+  loc_hypergeom[which(loc_hypergeom$pvalues<=0.0001), "pval_sign"] <- "****"
+  loc_hypergeom$pval_sign <- factor(loc_hypergeom$pval_sign, c("NS","*", "**","***","****"))
+  return(loc_hypergeom)
+}
+
+# 41. Plots the location enrichment results
+  # Input: the location enriched df, the order in which plot the groups and the cell types, which plot type
   # Return: plot
 
-PlotGenesLocation <- function(count_df) {
-  custom_pal <- createPalette(30, c("#010101", "#ff0000"), M=1000)
-  names(custom_pal) <- c("Uncertain", unique(count_df$locations)[1:29])
-  loc_plot <- 
-  ggplot(count_df, aes(locations, groups, size=loc_count, color=locations)) +
-    geom_point() +
+PlotEnrichedPvalues <- function(loc_hypergeom_merged, groups_ordered, cts_ordered) {
+  brewer_palette <- brewer.pal(6,"Purples")
+  loc_plt <- ggplot(loc_hypergeom_merged, aes(locations, groups, fill=pval_sign, size=loc_count)) +
+    geom_point(color="black", shape=21) +
     facet_grid(ct ~ sex, scales = "free", space = "free") +
-    scale_colour_manual(values=custom_pal) +
-    labs(x="", y="Groups", size="Genes found in location", color="Cellular locations") +
+    scale_fill_manual(values = c("NS"="white", 
+                                 "*"=brewer_palette[3],
+                                 "**"=brewer_palette[4],
+                                 "***"=brewer_palette[5],
+                                 "****"=brewer_palette[6]),
+                      na.value = "gray") +
+    labs(x="Cellular compartments", y="Datasets", size="Genes found in location", fill="P-values") +
     theme(panel.grid.major = element_blank(), 
           panel.grid.minor = element_blank(),
           panel.background = element_blank(), 
+          panel.spacing.x=unit(0.5, "lines"),
           strip.text.y = element_text(size=12, face="bold", colour = "black", angle = 0),
           strip.text.x = element_text(size=12, face="bold", colour = "black"),
           axis.line = element_line(colour = "black"),
           axis.title.x = element_text(size=12, face="bold", colour = "black"),
-          axis.text.x = element_text(size=8, colour = "black", vjust = 0.7, hjust=0.5, angle = 90),
+          axis.text.x = element_text(size=12, colour = "black", vjust = 0.7, hjust=0.5, angle = 90),
+          axis.text.y = element_text(size=12, colour = "black"),
           axis.ticks.x=element_blank(),
           axis.title.y = element_text(size=12, face="bold", colour = "black"),
           legend.position = "bottom", 
           legend.box = "vertical",
           legend.title = element_text(size=12, face="bold", colour = "black"))
-  return(loc_plot)
+  return(loc_plt)
 }
 
-# 41. Creates a list, each element the gene list from each groups present for a specific ct and sex
+# 42. Creates a list, each element the gene list from each groups present for a specific ct and sex
   # Input: the dataframe, the ct and sex to be analyzed, the order in which the groups should be plotted
   # Return: the list of gene lists, from a specific ct and sex, for each groups
 
@@ -1046,7 +1092,7 @@ ExtractSexCt <- function(sex_df, ct, sex, groups_ordered) {
   return(sex_ct)
 }
 
-# 42. Compares the GOs of a list of genes
+# 43. Compares the GOs of a list of genes
   # Input: list of genes to be compared, which GO (BP, MO or CC),  
     # if a minimum threshold for how many genes in each module should be used,
   # Return: enriched GO (formal class compareClusterResult)
@@ -1066,7 +1112,7 @@ compareGO <- function(sex_list, GO_ont, gene_thresh="no"){
   return(enrich)
 }
 
-# 43. finds the EntrezID for a gene
+# 44. finds the EntrezID for a gene
   # Input: gene symbol
   # Return: EntrezID(s) for the gene
 
@@ -1080,7 +1126,7 @@ GenetoENTREZ <- function(symbol){
   return(entrez.df)
 }
 
-# 44. Compares the KEGG pathways of a list of genes
+# 45. Compares the KEGG pathways of a list of genes
   # Input: list of genes to be compared, if a minimum threshold for how many genes in each module should be used
   # Return: enriched KEGG (formal class compareClusterResult)
 
@@ -1102,7 +1148,7 @@ compareKEGG <- function(sex_list, gene_thresh="no"){
   return(enrich)
 }
 
-# 45. Compares the DO of a list of genes
+# 46. Compares the DO of a list of genes
   # Input: list of genes to be compared, if a minimum threshold for how many genes in each module should be used
   # Return: enriched DO (formal class compareClusterResult)
 
@@ -1125,7 +1171,7 @@ compareDO <- function(sex_list, gene_thresh="no"){
 }
 
 
-# 46. Compares the DEGs from all groups in a specific ct-sex group
+# 47. Compares the DEGs from all groups in a specific ct-sex group
   # Input: the dataframe containing all DEGs, , the enrichment to be analyzed, 
     # the GO to analyze (if GO is the module), if a minimum threshold for how many genes in each module should be used, 
     # the order in which plot the groups, and if the x-axis labels should be rotated by 90 degrees, the threshold for the adjusted p-value to use
@@ -1179,7 +1225,7 @@ DBClusterProfiler <- function(sex_df, enrich_module, GO_ont="BP", gene_thresh="n
   return(plts)
 }
 
-# 47. Searches the selected database in enrichR
+# 48. Searches the selected database in enrichR
   # Input: the gene list, the database to look into
   # Return: dataframe with the retrieved information
 
@@ -1194,7 +1240,7 @@ EnrichR_fun <- function(gene_ls, dbsx){
   return(enrichR_df)
 }
 
-# 48. Searches in the DisGeNET database using disgenet2r
+# 49. Searches in the DisGeNET database using disgenet2r
   # Input: the gene list
   # Return: dataframe with the retrieved information
 
@@ -1206,7 +1252,7 @@ EnrichDisgenet2r_fun <- function(gene_ls){
   return(dgn_res)
 }
 
-# 49. Searches in the selected packages and databases for disease-enrichment
+# 50. Searches in the selected packages and databases for disease-enrichment
   # Input:  list of genes to be compared, the database to look into, the package to use
   # Return: list of enriched terms for each id (group or ct)
 
@@ -1229,7 +1275,7 @@ EnrichId <- function(sex_id, package, dbsx, name_col){
 
 
 
-# 50. Selects the top 5 enriched terms to combine in one df for plotting
+# 51. Selects the top 5 enriched terms to combine in one df for plotting
   # Input: the enriched list
   # Return: the filtered list of terms
 
@@ -1242,7 +1288,7 @@ SelectTop5 <- function(enrich_df){
 }
 
 
-# 51. Calculates the enrichment in the package and database specified for each ct-sex combo across all cts
+# 52. Calculates the enrichment in the package and database specified for each ct-sex combo across all cts
   # Input: main directory where to save the plots, the dataframe containing all DEGs, the package to be used,
     # the database, the order in which plot the groups
   # Return: nothing, saves plots and CSVs instead
