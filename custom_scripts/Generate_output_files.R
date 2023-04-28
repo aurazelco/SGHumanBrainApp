@@ -1,6 +1,6 @@
 
 ######################### Initial set-up and definition of core variables
-wd <- "/Users/aurazelco/Desktop/Lund_MSc/Thesis/HumanBrainSexSingleCell/"
+wd <- "HumanBrainSexSingleCell/"
 source(paste0(wd, "custom_scripts/Generate_output_files_func.R"))
 
 # manually decided how to combine the sub-celltypes
@@ -184,18 +184,18 @@ for (pval_x in pval_ls) {
     all_genes_filt$ct <- gsub("\\..*", "", rownames(all_genes_filt))
     
     # Number of DEGs
-    #num_degs_filt <- NumDEGsAcrossGroups(presence_df_filt, groups_order)
-    #num_degs_plot_filt <- PlotNumDEGsFaceted(num_degs_filt, custom_palette)
-    #png(paste0(plot_path, "Number_of_DEGs.png"), res = 300, units = 'in', height = 22, width = 15)
-    #print(num_degs_plot_filt)
-    #dev.off()
+    num_degs_filt <- NumDEGsAcrossGroups(presence_df_filt, groups_order)
+    num_degs_plot_filt <- PlotNumDEGsFaceted(num_degs_filt, custom_palette)
+    png(paste0(plot_path, "Number_of_DEGs.png"), res = 300, units = 'in', height = 22, width = 15)
+    print(num_degs_plot_filt)
+    dev.off()
     
     # Chr fractions
-    #gene_counts_filt <- CreateCountDfs(presence_df_filt)
-    #faceted_chr_fraction <- PlotChrFraction(gene_counts_filt)
-    #png(paste0(plot_path, "Chr_fractions.png"), res = 300, units = 'in', height = 22, width = 15)
-    #print(faceted_chr_fraction)
-    #dev.off()
+    gene_counts_filt <- CreateCountDfs(presence_df_filt)
+    faceted_chr_fraction <- PlotChrFraction(gene_counts_filt)
+    png(paste0(plot_path, "Chr_fractions.png"), res = 300, units = 'in', height = 22, width = 15)
+    print(faceted_chr_fraction)
+    dev.off()
     
     # Sex-biased gene location counts
     genes_loc <- ExtractLocation(presence_df_filt, location_df, groups_order)
@@ -207,86 +207,80 @@ for (pval_x in pval_ls) {
     dev.off()
     
     # Top 20 most different genes - presence heatmap
-    #mostdiff <- PlotTop20DiffGenes(all_genes_filt, groups_order)
-    #png(paste0(plot_path, "top_20_most_diff_genes.png"), res = 300, units = 'in', height = 8, width = 14)
-    #print(mostdiff)
-    #dev.off()
+    mostdiff <- PlotTop20DiffGenes(all_genes_filt, groups_order)
+    png(paste0(plot_path, "top_20_most_diff_genes.png"), res = 300, units = 'in', height = 8, width = 14)
+    print(mostdiff)
+    dev.off()
     
     # Presence of mitochondrial genes (MT)
-    #MTgenes <- PlotMTgenes(all_genes_filt, groups_order)
-    #png(paste0(plot_path, "MT_genes.png"), res = 300, units = 'in', height = 8, width = 14)
-    #print(MTgenes)
-    #dev.off()
+    MTgenes <- PlotMTgenes(all_genes_filt, groups_order)
+    png(paste0(plot_path, "MT_genes.png"), res = 300, units = 'in', height = 8, width = 14)
+    print(MTgenes)
+    dev.off()
     
     # Presence of X-escaping genes
-    #Xescapees <- PlotXescapees(all_genes_filt, groups_order, x_escapees)
-    #png(paste0(plot_path, "X_escaping_genes.png"), res = 300, units = 'in', height = 8, width = 14)
-    #print(Xescapees)
-    #dev.off()
+    Xescapees <- PlotXescapees(all_genes_filt, groups_order, x_escapees)
+    png(paste0(plot_path, "X_escaping_genes.png"), res = 300, units = 'in', height = 8, width = 14)
+    print(Xescapees)
+    dev.off()
     
     # Percentage of McKenzie cell type markers
-    #mckenzie_perc <- PlotPercRef(all_genes_filt, McKenzie, groups_order[7:13], McKenzie_ct_names)
-    #png(paste0(plot_path, "McKenzie_perc.png"), res = 300, units = 'in', height = 8, width = 15)
-    #print(mckenzie_perc)
-    #dev.off()
+    mckenzie_perc <- PlotPercRef(all_genes_filt, McKenzie, groups_order[7:13], McKenzie_ct_names)
+    png(paste0(plot_path, "McKenzie_perc.png"), res = 300, units = 'in', height = 8, width = 15)
+    print(mckenzie_perc)
+    dev.off()
     
     # Chlamydas disease markers
-    #chl_deg <- CreateDiseaseDf(Chlamydas, all_genes_filt)
-    #chl_hmp <- PlotDisDegGroup(chl_deg, "Neuropsychiatric diseases", groups_order)
-    #png(paste0(plot_path, "Chlamydas_hmp.png"), res = 300, units = 'in', height = 8, width = 15)
-    #print(chl_hmp)
-    #dev.off()
+    chl_deg <- CreateDiseaseDf(Chlamydas, all_genes_filt)
+    chl_hmp <- PlotDisDegGroup(chl_deg, "Neuropsychiatric diseases", groups_order)
+    png(paste0(plot_path, "Chlamydas_hmp.png"), res = 300, units = 'in', height = 8, width = 15)
+    print(chl_hmp)
+    dev.off()
     
     # Hormone targets enrichment
-    #hormones_df <- CreateHormonesDf(all_genes_filt, hormones_filt, groups_order)
-    #hormones_pval <- HormoneEnrichment(hormones_df)
-    #hmp_hormones <- HmpHormoneEnrichment(hormones_pval, groups_order)
-    #png(paste0(plot_path, "Hormone_target_enrichment.png"), res = 300, units = 'in', height = 15, width = 10)
-    #print(hmp_hormones)
-    #dev.off()
+    hormones_df <- CreateHormonesDf(all_genes_filt, hormones_filt, groups_order)
+    hormones_pval <- HormoneEnrichment(hormones_df)
+    hmp_hormones <- HmpHormoneEnrichment(hormones_pval, groups_order)
+    png(paste0(plot_path, "Hormone_target_enrichment.png"), res = 300, units = 'in', height = 15, width = 10)
+    print(hmp_hormones)
+    dev.off()
     
     # ARE sites plots
-    #ARE_plt <- ARE_ERE_plots(all_genes_filt, "ARE", ARE_sites, EREgene, groups_order)
-    #png(paste0(plot_path, "ARE.png"), res = 300, units = 'in', height = 12, width = 10)
-    #print(ARE_plt)
-    #dev.off()
+    ARE_plt <- ARE_ERE_plots(all_genes_filt, "ARE", ARE_sites, EREgene, groups_order)
+    png(paste0(plot_path, "ARE.png"), res = 300, units = 'in', height = 12, width = 10)
+    print(ARE_plt)
+    dev.off()
     
     # ERE sites plots
-    #ERE_plt <- ARE_ERE_plots(all_genes_filt, "ERE", ARE_sites, EREgene, groups_order)
-    #png(paste0(plot_path, "ERE.png"), res = 300, units = 'in', height = 12, width = 10)
-    #print(ERE_plt)
-    #dev.off()
+    ERE_plt <- ARE_ERE_plots(all_genes_filt, "ERE", ARE_sites, EREgene, groups_order)
+    png(paste0(plot_path, "ERE.png"), res = 300, units = 'in', height = 12, width = 10)
+    print(ERE_plt)
+    dev.off()
     
     # GO Biological Processes enrichment
-    #GOBP <- DBClusterProfiler(all_genes_filt[which(all_genes_filt$presence=="Yes"), ], "GO", "BP", gene_thresh = 100, groups_ordered = groups_order, rotate_x_axis = T, adj_pval_thresh =  0.01, cts_sex_order)
-    #png(paste0(plot_path, "GO_BP.png"), res = 300, units = 'in', height = 30, width = 30)
-    #print(ggarrange(plotlist = GOBP, ncol = 4, nrow = 5))
-    #dev.off()
+    GOBP <- DBClusterProfiler(all_genes_filt[which(all_genes_filt$presence=="Yes"), ], "GO", "BP", gene_thresh = 100, groups_ordered = groups_order, rotate_x_axis = T, adj_pval_thresh =  0.01, cts_sex_order)
+    png(paste0(plot_path, "GO_BP.png"), res = 300, units = 'in', height = 30, width = 30)
+    print(ggarrange(plotlist = GOBP, ncol = 4, nrow = 5))
+    dev.off()
     
     # GO Cellular Component enrichment
-    #GOCC <- DBClusterProfiler(all_genes_filt[which(all_genes_filt$presence=="Yes"), ], "GO", "CC", gene_thresh = 100, groups_ordered = groups_order, rotate_x_axis = T, adj_pval_thresh =  0.01, cts_sex_order)
-    #png(paste0(plot_path, "GO_CC.png"), res = 300, units = 'in', height = 30, width = 30)
-    #print(ggarrange(plotlist = GOCC, ncol = 4, nrow = 5))
-    #dev.off()
+    GOCC <- DBClusterProfiler(all_genes_filt[which(all_genes_filt$presence=="Yes"), ], "GO", "CC", gene_thresh = 100, groups_ordered = groups_order, rotate_x_axis = T, adj_pval_thresh =  0.01, cts_sex_order)
+    png(paste0(plot_path, "GO_CC.png"), res = 300, units = 'in', height = 30, width = 30)
+    print(ggarrange(plotlist = GOCC, ncol = 4, nrow = 5))
+    dev.off()
     
     # GO Molecular Function enrichment
-    #GOMF <- DBClusterProfiler(all_genes_filt[which(all_genes_filt$presence=="Yes"), ], "GO", "MF", gene_thresh = 100, groups_ordered = groups_order, rotate_x_axis = T, adj_pval_thresh =  0.01, cts_sex_order)
-    #png(paste0(plot_path, "GO_MF.png"), res = 300, units = 'in', height = 30, width = 30)
-    #print(ggarrange(plotlist = GOMF, ncol = 4, nrow = 5))
-    #dev.off()
+    GOMF <- DBClusterProfiler(all_genes_filt[which(all_genes_filt$presence=="Yes"), ], "GO", "MF", gene_thresh = 100, groups_ordered = groups_order, rotate_x_axis = T, adj_pval_thresh =  0.01, cts_sex_order)
+    png(paste0(plot_path, "GO_MF.png"), res = 300, units = 'in', height = 30, width = 30)
+    print(ggarrange(plotlist = GOMF, ncol = 4, nrow = 5))
+    dev.off()
     
     # KEGG enrichment
-    #KEGG_res <- DBEnrichR(all_genes_filt[which(all_genes_filt$presence=="Yes"), ], "EnrichR",  "KEGG_2021_Human", groups_order, cts_sex_order)
-    #png(paste0(plot_path, "KEGG.png"), res = 300, units = 'in', height = 30, width = 30)
-    #print(ggarrange(plotlist = KEGG_res, ncol = 4, nrow = 5))
-    #dev.off()
+    KEGG_res <- DBEnrichR(all_genes_filt[which(all_genes_filt$presence=="Yes"), ], "EnrichR",  "KEGG_2021_Human", groups_order, cts_sex_order)
+    png(paste0(plot_path, "KEGG.png"), res = 300, units = 'in', height = 30, width = 30)
+    print(ggarrange(plotlist = KEGG_res, ncol = 4, nrow = 5))
+    dev.off()
     
   }
 }
-
-filt_degs <- ImportFiltDatasets(paste0(wd, "data/Filtered_DEGs/"), 0.05, 1.2)
-presence_df_filt <- CreateSexDf(filt_degs, unified_annotation)
-all_genes_filt <- do.call(rbind, presence_df_filt)
-all_genes_filt$ct <- gsub("\\..*", "", rownames(all_genes_filt))
-plot_path <- paste0(wd, "www/Plots/pval_1_FC_1/")
 
