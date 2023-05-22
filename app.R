@@ -41,7 +41,7 @@ source('custom_scripts/Healthy_allreg2.R')
 ui <- dashboardPage(
   skin = "purple",
   # title of web app
-  dashboardHeader(title = "SGHumanBrain", titleWidth = 300),
+  dashboardHeader(title = "SGHumanBrainApp", titleWidth = 300),
   
   # tabs
   dashboardSidebar(

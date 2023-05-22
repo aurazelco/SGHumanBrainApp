@@ -7,7 +7,7 @@ AboutUI <- function(id, label = "summary"){
     # First Section
     fluidRow(
       br(),
-      p(strong("SGHumanBrain"), " is a web application to explore the results from sex-biased differentially expressed genes (DEGs) in the human brain."),
+      p(strong("SGHumanBrainApp"), " is a web application to explore the results from sex-biased differentially expressed genes (DEGs) in the human brain."),
       p("The web application contains DEGs analysis from both single-cell and bulk RNA-seq, performed in two separate papers. The tabs indicate from which analysis the data come from."),
       p("Please refer to the abstracts below and the papers for more information."),
       br(),
