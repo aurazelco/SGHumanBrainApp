@@ -50,3 +50,8 @@ The [www](www/) folder contains all plots and images, mainly as PNG, which are d
 ### Bulk RNA-seq
 Images with information about the datasets per region can be found [here](wwww/bulk/). 
 
+
+## Notes
+
+The bulk RNA-seq app was also developed indipendently, please check the original source [here](https://github.com/PattaWapee/SexRankBrain).  
+
