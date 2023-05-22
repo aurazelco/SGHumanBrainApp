@@ -14,7 +14,6 @@ DsUI <- function(id, label = "ds_info"){
         tags$a(href = "https://www.immunesinglecell.org", "Li et al. 2022 (DISCO v1.0)"),
         "."),
       p("For each sub-dataset, as described below, we compared the genes expressed in females and males for each cell type, therefore obtaining sex-biased differentially expressed gene lists (DEGs) in each cell type and sub-dataset."),
-      p("Furthermore, we also perfomed a Gene Regulatory Network analysis (GRN), to investigate if any transcription factor was predicted to be sex-biased. "),
       br(),
       h4("Velmeshev et al. 2022"),
       p("This single-nucleus RNA-seq dataset collects healthy human brain samples, from the second trimester of gestation until adulthood (defined as more than 20 years of age)."),

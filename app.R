@@ -17,10 +17,18 @@
 
 library(shiny)
 library(shinydashboard)
+
+# General summary pages
 source("custom_scripts/About.R")
 source("custom_scripts/Source.R")
+
+# Single cell datasets and DEGs
 source("custom_scripts/DsInfo.R")
 source("custom_scripts/DEGs.R")
+
+# Bulk RNA-seq datasets and DEGs
+source('custom_scripts/Healthy_reg.R')
+source('custom_scripts/Healthy_allreg2.R')
 
 
 ############################################################################################
@@ -33,33 +41,45 @@ source("custom_scripts/DEGs.R")
 ui <- dashboardPage(
   skin = "purple",
   # title of web app
-  dashboardHeader(title = "HumanBrainSexSingleCell", titleWidth = 300),
+  dashboardHeader(title = "SGHumanBrain", titleWidth = 300),
   
   # tabs
   dashboardSidebar(
     width = 300,
     sidebarMenu(
     menuItem("Summary", tabName = "summary", icon = icon("dashboard")),
-    menuItem("Datasets information", tabName = "ds_info", icon = icon("folder-open", lib="glyphicon")),
-    menuItem("Differentially Expressed Genes Analysis", tabName = "degs", icon = icon("stats", lib="glyphicon")),
+    menuItem("ScRNA-seq - Datasets information", tabName = "ds_info", icon = icon("folder-open", lib="glyphicon")),
+    menuItem("ScRNA-seq - DEGs Analysis", tabName = "degs", icon = icon("stats", lib="glyphicon")),
+    menuItem("Bulk RNA-seq - Specific brain region", tabName = "Healthy1", icon = icon("stats", lib="glyphicon")),
+    menuItem("Bulk RNA-seq - Across brain regions", tabName = "Healthy2", icon = icon("stats", lib="glyphicon")),
     menuItem("Open source code", tabName = "source_code", icon = icon("cog", lib="glyphicon"))
   )),
   
   dashboardBody(
       tabItems(
         tabItem(tabName = "summary",
-                h2("HumanBrainSexSingleCell"),
+                h2("SGHumanBrain"),
                 AboutUI("Summary")
         ),
         
         tabItem(tabName = "ds_info",
-                h2("Datasets information"),
+                h2("ScRNA-seq - Datasets information"),
                 DsUI("Datasets information")
         ),
         
         tabItem(tabName = "degs",
-                h2("Differentially Expressed Genes Analysis (DEGs)"),
+                h2("ScRNA-seq - DEGs Analysis"),
                 DEGsUI("DEGs")
+        ),
+        
+        tabItem(tabName = "Healthy1",
+                h2("Sex-biased genes rank for healthy brain samples"),
+                Healthy_UI('Healthy1')
+        ),
+        
+        tabItem(tabName = "Healthy2",
+                h2("Sex-biased genes rank across brain regions for healthy brain samples"),
+                HealthyAllUI('Healthy2')
         ),
         
         tabItem(tabName = "source_code",
@@ -77,11 +97,11 @@ ui <- dashboardPage(
 
 # 4. Server
 
-server <- function(input, output, session) { 
-  
+server <- function(input, output, session) {
   DEGsServer("DEGs")
-  
-  }
+  Healthy_Server('Healthy1')
+  HealthyAllServer('Healthy2')
+}
 
 
 ############################################################################################
