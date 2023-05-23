@@ -1,6 +1,6 @@
 # SGHumanBrainApp
 
-This repository contains the code for the web app [SGHumanBrainApp](link) and the files used to build the app. The link for the SGHumanBrainApp web app is https://joshiapps.cbu.uib.no/GenderRank_app. 
+This repository contains the code for the web app [SGHumanBrainApp](https://joshiapps.cbu.uib.no/SRB_app/) and the files used to build the app. The link for the SGHumanBrainApp web app is https://joshiapps.cbu.uib.no/GenderRank_app. 
 
 
 ## Table of Contents
