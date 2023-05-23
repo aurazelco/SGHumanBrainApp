@@ -12,6 +12,7 @@ AboutUI <- function(id, label = "summary"){
       p("Please refer to the abstracts below and the papers for more information."),
       br(),
       h3("Single-cell RNA-seq paper",  style = "color:purple"),
+      h3("Exploring the sex and gender differences in the human brain at single cell level"), 
       h4("Abstract"),
       p(strong("Background:"),  " Sex and gender have only lately been systematically regarded as a biological variable in both pre-clinical and clinical investigations. The impact of sex and gender on a wide range of biological and psychological variables remains largely unknown during brain development and ageing disorders."),
       p(strong("Methods:"),  " To systematically evaluate sex and gender (SG) differences at different development stages and ageing disorders at a single cell level, we gathered publicly available single-nucleus RNA-sequencing studies through human life span from second trimester of gestation until geriatric age in healthy individuals and from Alzheimer's disease (AD) and Multiple Sclerosis (MS) patients. In summary, we collected single cell data for a total of 419885 single nuclei from 161 human brain samples (72 females and 89 males) to identify and characterise SG-biased genes."),
@@ -20,6 +21,7 @@ AboutUI <- function(id, label = "summary"){
       p(strong("Keywords:"), " sex; gender; sex and gender differences; human brain; transcriptome; single-nucleus RNA-seq"),
       br(),
       h3("Bulk RNA-seq paper",  style = "color:purple"),
+      h3("Integrated analysis of robust sex-biased gene signatures in human brain"), 
       h4("Abstract"),
       p(strong("Background:"),  " Sex dimorphism is highly prominent in mammals with
                          many systematic differences between male and female 
