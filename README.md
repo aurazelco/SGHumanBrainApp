@@ -53,5 +53,9 @@ Images with information about the datasets per region can be found [here](wwww/b
 
 ## Notes
 
-The bulk RNA-seq app was also developed indipendently, please check the original source [here](https://github.com/PattaWapee/SexRankBrain).  
+- The bulk RNA-seq app was also developed indipendently, please check the original source [here](https://github.com/PattaWapee/SexRankBrain).  
+- Because this repo contains a large amount of files (stored with LFS), it is advisable to clone the repo, and **NOT** download it as a zip folder, using the following command:
 
+```shell
+git clone https://github.com/aurazelco/SGHumanBrainApp.git
+```
